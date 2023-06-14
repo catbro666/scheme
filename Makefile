@@ -14,11 +14,11 @@ INCLUDES = $(TEST_INCLUDES)
 SRC_DIR = src
 TEST_DIR = test
 
-SRCS = $(filter-out $(SRC_DIR)/main.c, $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c))
+SRCS = $(filter-out $(SRC_DIR)/scheme.c, $(wildcard $(SRC_DIR)/*.c $(SRC_DIR)/*/*.c))
 TEST_SRCS = $(wildcard $(TEST_DIR)/*_test.c)
 
 OBJS = $(SRCS:.c=.o)
-MAIN_OBJ = $(SRC_DIR)/main.o
+MAIN_OBJ = $(SRC_DIR)/scheme.o
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 
 TARGET = scheme
