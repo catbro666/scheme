@@ -25,9 +25,9 @@ void scm_object_free(scm_object *obj) {
     scm_object_data_free_fn data_free = frees[obj->type];
     if (data_free) {
         data_free((void *)obj->data);
-    }
 
-    free(obj);
+        free(obj);
+    }
 }
 
 scm_type scm_object_get_type(const scm_object *obj) {
@@ -44,7 +44,7 @@ intptr_t scm_object_get_data(const scm_object *obj) {
 static scm_object scm_eof_arr[1] = {{scm_type_eof, (intptr_t)NULL}};
 static scm_object scm_true_arr[1] = {{scm_type_true, (intptr_t)NULL}};
 static scm_object scm_false_arr[1] = {{scm_type_false, (intptr_t)NULL}};
-const int CHAR_NUM = 128;
+static const int CHAR_NUM = 128;
 static scm_object scm_chars_arr[CHAR_NUM];
 scm_object *scm_chars[CHAR_NUM];
 scm_object *scm_eof = scm_eof_arr;

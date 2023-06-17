@@ -38,3 +38,23 @@ TEST(object, scm_chars) {
     }
 }
 
+TEST(object, cant_free_static_objects) {
+    int res, i;
+    res = scm_object_env_init();
+    REQUIRE(!res, "scm_object_env_init");
+
+    scm_object *objs[] = {scm_eof, scm_true, scm_false};
+    scm_type types[] = {scm_type_eof, scm_type_true, scm_type_false};
+
+    for (i = 0; i < (int)(sizeof(objs)/sizeof(scm_object *)); ++i) {
+      scm_object_free(objs[i]);
+      scm_type type = scm_object_get_type(objs[i]);
+      CHECK_EQ(type, types[i]);
+    }
+
+    for (i = 0; i < 128; ++i) {
+      scm_object_free(scm_chars[i]);
+      scm_type type = scm_object_get_type(scm_chars[i]);
+      CHECK_EQ(type, scm_type_char);
+    }
+}
