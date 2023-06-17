@@ -44,7 +44,7 @@ $(TEST_TARGETS): %: $(OBJS) %.o
 	$(CC) $(CCFLAGS) $(INCLUDES) -o $@ -c $<
 
 clean:
-	rm -f $(OBJS) $(TEST_OBJS)
+	rm -f $(OBJS) $(MAIN_OBJ) $(TEST_OBJS)
 
 clean_all: clean
 	rm -f $(TARGET) $(TEST_TARGETS)
