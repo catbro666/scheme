@@ -8,9 +8,11 @@ struct scm_input_port_st {
     short type;
 };
 
-typedef scm_object* (*readc_fn)(scm_input_port *);
-typedef scm_object* (*peekc_fn)(scm_input_port *);
+typedef int (*readc_fn)(scm_input_port *);
+typedef int (*peekc_fn)(scm_input_port *);
+typedef int (*unreadc_fn)(scm_input_port *, int c);
 typedef void (*iport_free_fn)(scm_input_port *);
+#define PORT_CACHE_SIZE 4
 
 enum {
     iport_type_string = 0,
@@ -20,6 +22,7 @@ enum {
 static struct iport_callbacks_st {
     readc_fn readc;
     peekc_fn peekc;
+    unreadc_fn unreadc;
     iport_free_fn free;
 } iport_callbacks[iport_type_max];
 
@@ -29,27 +32,40 @@ struct string_input_port_st {
     const char *buf;
     size_t size;
     size_t pos;
+    char cache[PORT_CACHE_SIZE];
+    size_t cache_pos;
 };
 typedef struct string_input_port_st string_input_port;
 
-static scm_object *string_input_port_readc(scm_input_port *port) {
+static int string_input_port_readc(scm_input_port *port) {
     string_input_port *p = (string_input_port *)port;
+    if (p->cache_pos) {
+        return p->cache[--(p->cache_pos)];
+    }
+
     if (p->pos == p->size) {
-        return scm_eof;
+        return -1;
     }
     else {
-        return scm_chars[(unsigned)p->buf[p->pos++]];
+        return p->buf[p->pos++];
     }
 }
 
-static scm_object *string_input_port_peekc(scm_input_port *port) {
+static int string_input_port_unreadc(scm_input_port *port, int c) {
     string_input_port *p = (string_input_port *)port;
-    if (p->pos == p->size) {
-        return scm_eof;
+    (void)c;
+
+    if (p->cache_pos == PORT_CACHE_SIZE) {
+        return 1;
     }
-    else {
-        return scm_chars[(unsigned)p->buf[p->pos]];
-    }
+    p->cache[p->cache_pos++] = c;
+    return 0;
+}
+
+static int string_input_port_peekc(scm_input_port *port) {
+    int c = string_input_port_readc(port);
+    string_input_port_unreadc(port, c);
+    return c;
 }
 
 static void string_input_port_free(scm_input_port *port) {
@@ -60,6 +76,7 @@ static void string_input_port_free(scm_input_port *port) {
 static void string_input_port_register() {
     iport_callbacks[iport_type_string].readc = string_input_port_readc;
     iport_callbacks[iport_type_string].peekc = string_input_port_peekc;
+    iport_callbacks[iport_type_string].unreadc = string_input_port_unreadc;
     iport_callbacks[iport_type_string].free = string_input_port_free;
     return;
 }
@@ -96,24 +113,34 @@ scm_object *string_input_port_new(const char *buf, int size) {
     return obj;
 }
 
-scm_object *scm_input_port_readc(scm_object *port) {
+int scm_input_port_readc(scm_object *port) {
     scm_type type = scm_object_get_type(port);
     scm_input_port *data = (scm_input_port *)scm_object_get_data(port);
     if (type != scm_type_input_port) {
-        return NULL;
+        return -2;  /* TODO: contract violation checking in outer layer */
     }
 
     return iport_callbacks[data->type].readc(data);
 }
 
-scm_object *scm_input_port_peekc(scm_object *port) {
+int scm_input_port_peekc(scm_object *port) {
     scm_type type = scm_object_get_type(port);
     scm_input_port *data = (scm_input_port *)scm_object_get_data(port);
     if (type != scm_type_input_port) {
-        return NULL;
+        return -2;  /* contract violation */
     }
 
     return iport_callbacks[data->type].peekc(data);
+}
+
+int scm_input_port_unreadc(scm_object *port, int c) {
+    scm_type type = scm_object_get_type(port);
+    scm_input_port *data = (scm_input_port *)scm_object_get_data(port);
+    if (type != scm_type_input_port) {
+        return -2;  /* contract violation */
+    }
+
+    return iport_callbacks[data->type].unreadc(data, c);
 }
 
 static void scm_input_port_free(void *port) {

@@ -6,8 +6,10 @@ typedef struct scm_input_port_st scm_input_port;
 
 scm_object *string_input_port_new(const char *buf, int size);
 
-scm_object *scm_input_port_readc(scm_object *port);
-scm_object *scm_input_port_peekc(scm_object *port);
+/* return -1 when eof */
+int scm_input_port_readc(scm_object *port);
+int scm_input_port_peekc(scm_object *port);
+int scm_input_port_unreadc(scm_object *port, int c);
 
 int scm_port_env_init(void);
 
