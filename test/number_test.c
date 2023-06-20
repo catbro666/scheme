@@ -188,7 +188,7 @@ TEST(number, integer_from_float) {
     }
 }
 
-TEST(number, float_from__integer) {
+TEST(number, float_from_integer) {
     int res, i;
     scm_object *obj;
     char *str = NULL;
