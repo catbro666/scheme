@@ -41,12 +41,6 @@ scm_token *scm_token_dot       = scm_token_dot_arr;
 
 static scm_token *scm_token_new(short type, scm_object *obj);
 
-static void skip_first_readc(scm_object *port, int *count) {
-    if ((*count)++) {
-        scm_input_port_readc(port);
-    }
-}
-
 static int is_newline(int c) {
     return c == '\n';
 }
@@ -302,16 +296,16 @@ err:
 /* complex = real + real i
  * real = integer/integer | float */
 
-static scm_token *read_number(scm_object *port, int c) {
-    /* number containing point or exponent is inexact by default */
+static scm_token *read_number(scm_object *port) {
+    /* number containing point, exponent or sharp is inexact by default */
     int radix = -1, exactness = -1, is_float = 0;
-    int c2, i = 2, j;
+    int c, c2, i = 2, j;
     int num_size = 0;
     char *num = NULL;
-    int count = 0;
     int has_point = 0, has_sharp = 0, has_exponent = 0, has_digit = 0;
     scm_object *obj;
     scm_token *tok = NULL;
+    c = scm_input_port_peekc(port);
 
     /* prefix */
     while (i > 0) {
@@ -319,7 +313,7 @@ static scm_token *read_number(scm_object *port, int c) {
             break;
         }
 
-        skip_first_readc(port, &count);
+        scm_input_port_readc(port);
 
         c2 = scm_input_port_peekc(port);
         switch (c2) {
@@ -362,7 +356,7 @@ static scm_token *read_number(scm_object *port, int c) {
         default:
             goto err; /* bad syntax */
         }
-        skip_first_readc(port, &count);
+        scm_input_port_readc(port);
 
         c = scm_input_port_peekc(port);
         --i;
@@ -380,7 +374,7 @@ static scm_token *read_number(scm_object *port, int c) {
             break;
         }
 
-        skip_first_readc(port, &count);
+        scm_input_port_readc(port);
 
         /* sign must be at the beginning */
         if (i == j && (c == '+' || c == '-')) {
@@ -563,11 +557,13 @@ scm_token *scm_token_read(scm_object *port) {
             scm_input_port_readc(port);
             return read_char(port);
         default:
-            return read_number(port, c);
+            scm_input_port_unreadc(port, c);
+            return read_number(port);
         }
     default:
         if (isdigit(c)) {
-            return read_number(port, c);
+            scm_input_port_unreadc(port, c);
+            return read_number(port);
         }
         else if (is_initial(c)) {
             return read_identifier(port, c);
@@ -585,7 +581,8 @@ scm_token *scm_token_read(scm_object *port) {
                 return make_peculiar_identifier(buf, 1);
             }
             else {
-                return read_number(port, c);
+                scm_input_port_unreadc(port, c);
+                return read_number(port);
             }
         case '.':
             c2 = scm_input_port_peekc(port);
@@ -593,7 +590,8 @@ scm_token *scm_token_read(scm_object *port) {
                 return scm_token_dot;
             }
             else if (isdigit(c2)) {
-                return read_number(port, c);
+                scm_input_port_unreadc(port, c);
+                return read_number(port);
             }
             scm_input_port_readc(port);
             c = scm_input_port_readc(port);
