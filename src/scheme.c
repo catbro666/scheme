@@ -1,4 +1,5 @@
 #include "object.h"
+#include "char.h"
 #include "port.h"
 #include "string.h"
 #include "number.h"
@@ -8,6 +9,7 @@
 int main()
 {
     scm_object_env_init();
+    scm_char_env_init();
     scm_port_env_init();
     scm_string_env_init();
     scm_number_env_init();

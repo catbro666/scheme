@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 struct scm_input_port_st {
+    scm_object base;
     short type;
 };
 
@@ -99,53 +100,47 @@ scm_object *string_input_port_new(const char *buf, int size) {
         return NULL;
     }
 
+    port->base.base.type = scm_type_input_port;
     port->base.type = iport_type_string;
     port->buf = buf;
     port->size = size;
     port->pos = 0;
 
-    scm_object *obj = scm_object_new(scm_type_input_port, (intptr_t)port);
-    if (obj == NULL) {
-        free(port);
-        return NULL;
-    }
-
-    return obj;
+    return (scm_object *)port;
 }
 
-int scm_input_port_readc(scm_object *port) {
-    scm_type type = scm_object_get_type(port);
-    scm_input_port *data = (scm_input_port *)scm_object_get_data(port);
-    if (type != scm_type_input_port) {
+int scm_input_port_readc(scm_object *obj) {
+    if (obj->type != scm_type_input_port) {
         return -2;  /* TODO: contract violation checking in outer layer */
     }
 
-    return iport_callbacks[data->type].readc(data);
+    scm_input_port *port = (scm_input_port *)obj;
+
+    return iport_callbacks[port->type].readc(port);
 }
 
-int scm_input_port_peekc(scm_object *port) {
-    scm_type type = scm_object_get_type(port);
-    scm_input_port *data = (scm_input_port *)scm_object_get_data(port);
-    if (type != scm_type_input_port) {
+int scm_input_port_peekc(scm_object *obj) {
+    if (obj->type != scm_type_input_port) {
         return -2;  /* contract violation */
     }
 
-    return iport_callbacks[data->type].peekc(data);
+    scm_input_port *port = (scm_input_port *)obj;
+    return iport_callbacks[port->type].peekc(port);
 }
 
-int scm_input_port_unreadc(scm_object *port, int c) {
-    scm_type type = scm_object_get_type(port);
-    scm_input_port *data = (scm_input_port *)scm_object_get_data(port);
-    if (type != scm_type_input_port) {
+int scm_input_port_unreadc(scm_object *obj, int c) {
+    if (obj->type != scm_type_input_port) {
         return -2;  /* contract violation */
     }
 
-    return iport_callbacks[data->type].unreadc(data, c);
+    scm_input_port *port = (scm_input_port *)obj;
+
+    return iport_callbacks[port->type].unreadc(port, c);
 }
 
-static void scm_input_port_free(void *port) {
-    scm_input_port *p = (scm_input_port *)port;
-    iport_callbacks[p->type].free(p);
+static void scm_input_port_free(scm_object *obj) {
+    scm_input_port *port = (scm_input_port *)obj;
+    iport_callbacks[port->type].free(port);
     return;
 }
 

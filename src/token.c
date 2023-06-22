@@ -1,6 +1,6 @@
 #include "token.h"
-#include "object.h"
 #include "port.h"
+#include "char.h"
 #include "string.h"
 #include "number.h"
 
@@ -10,7 +10,6 @@
 
 struct scm_token_st {
     short type;
-    /* object */
     scm_object *obj;
 };
 
@@ -637,8 +636,8 @@ scm_object *scm_token_get_obj(scm_token *tok) {
 }
 
 void scm_token_free(scm_token *tok) {
-    /* skip the static tokens */
-    if (tok->type == scm_token_type_char ||
+    /* skip the static tokens and non-object tokens */
+    if ((tok->type >= scm_token_type_eof && tok->type <= scm_token_type_char) ||
         tok->obj == NULL) {
         return;
     }
@@ -653,6 +652,9 @@ int scm_token_env_init(void) {
     if (initialized)
         return 0;
 
+    scm_token_eof_arr[0].obj = scm_eof;
+    scm_token_true_arr[0].obj = scm_true;
+    scm_token_false_arr[0].obj = scm_false;
     for (i = 0; i < CHAR_NUM; ++i) {
         scm_token_chars_arr[i].type = scm_token_type_char;
         scm_token_chars_arr[i].obj = scm_chars[i];

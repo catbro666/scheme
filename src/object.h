@@ -5,9 +5,10 @@
 /* no data: scm_type_eof, scm_type_true, scm_type_false */
 /* int data: scm_type_char, scm_type_integer */
 typedef enum {
-    scm_type_true = 0,
+    scm_type_eof = 0,
+    scm_type_null,
+    scm_type_true,
     scm_type_false,
-    scm_type_eof,
     scm_type_char,
     scm_type_integer,
     scm_type_float,
@@ -21,21 +22,18 @@ typedef enum {
     scm_type_max,
 } scm_type;
 
-typedef struct scm_object_st scm_object;
+typedef struct scm_object_st {
+    scm_type type;
+} scm_object;
 
 extern scm_object *scm_eof;
 extern scm_object *scm_true;
 extern scm_object *scm_false;
-extern scm_object *scm_chars[];
 
 /* free function of the specific type */
-typedef void (*scm_object_data_free_fn)(void *data);
+typedef void (*scm_object_data_free_fn)(scm_object *data);
 
-scm_object *scm_object_new(scm_type type, intptr_t data);
 void scm_object_free(scm_object *obj);
-
-scm_type scm_object_get_type(const scm_object *obj);
-intptr_t scm_object_get_data(const scm_object *obj);
 
 void scm_object_register(scm_type, scm_object_data_free_fn fn);
 

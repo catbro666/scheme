@@ -4,14 +4,17 @@
 
 TAU_MAIN()
 
-TEST(number, positive_integers) {
-    int res, i;
-    scm_object *obj;
-    char *str = NULL;
+void init() {
+    int res;
     res = scm_number_env_init();
     REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+}
+
+TEST(number, positive_integers) {
+    int i;
+    scm_object *obj;
+    char *str = NULL;
+    init();
 
     const int n = 4;
     char *strs[n] = {"998", "ffe", "110", "776"};
@@ -20,8 +23,7 @@ TEST(number, positive_integers) {
         obj = scm_number_new_integer(strs[i], radices[i]);
         REQUIRE(obj, "scm_number_new_integer");
 
-        scm_type type = scm_object_get_type(obj);
-        REQUIRE_EQ(type, scm_type_integer);
+        REQUIRE_EQ(obj->type, scm_type_integer);
 
         str = scm_number_to_string(obj, radices[i]);
         REQUIRE_STREQ(str, strs[i]);
@@ -32,13 +34,10 @@ TEST(number, positive_integers) {
 }
 
 TEST(number, zero_negative_integers) {
-    int res, i;
+    int i;
     scm_object *obj;
     char *str = NULL;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+    init();
 
     const int n = 8;
     char *strs[n] = {"-998", "-ffe", "-110", "-776", "0", "0", "0", "0"};
@@ -47,8 +46,7 @@ TEST(number, zero_negative_integers) {
         obj = scm_number_new_integer(strs[i], radices[i]);
         REQUIRE(obj, "scm_number_new_integer");
 
-        scm_type type = scm_object_get_type(obj);
-        REQUIRE_EQ(type, scm_type_integer);
+        REQUIRE_EQ(obj->type, scm_type_integer);
 
         str = scm_number_to_string(obj, radices[i]);
         REQUIRE_STREQ(str, strs[i]);
@@ -59,13 +57,10 @@ TEST(number, zero_negative_integers) {
 }
 
 TEST(number, integer_max_min) {
-    int res, i, j;
+    int i, j;
     scm_object *obj, *obj2;
     char *str = NULL, *str2 = NULL;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+    init();
 
     char max[256], min[256];
     snprintf(max, 256, "%ld", LONG_MAX);
@@ -79,16 +74,14 @@ TEST(number, integer_max_min) {
             obj = scm_number_new_integer(strs[i], 10);
             REQUIRE(obj, "scm_number_new_integer");
 
-            scm_type type = scm_object_get_type(obj);
-            REQUIRE_EQ(type, scm_type_integer);
+            REQUIRE_EQ(obj->type, scm_type_integer);
 
             str = scm_number_to_string(obj, radices[j]);
 
             obj2 = scm_number_new_integer(str, radices[j]);
             REQUIRE(obj2, "scm_number_new_integer");
 
-            type = scm_object_get_type(obj);
-            REQUIRE_EQ(type, scm_type_integer);
+            REQUIRE_EQ(obj2->type, scm_type_integer);
 
             str2 = scm_number_to_string(obj2, 10);
             REQUIRE_STREQ(str2, strs[i]);
@@ -102,12 +95,9 @@ TEST(number, integer_max_min) {
 }
 
 TEST(number, integer_out_of_range) {
-    int res, i;
+    int i;
     scm_object *obj;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+    init();
 
     const int n = 2;
     char *strs[n] = {"9223372036854775808", "-9223372036854775809"};
@@ -119,13 +109,10 @@ TEST(number, integer_out_of_range) {
 }
 
 TEST(number, floats) {
-    int res, i;
+    int i;
     scm_object *obj;
     char *str = NULL;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+    init();
 
     const int n = 5;
     char *strs[n] = {"100.0", "2e-3", "-0.000003", "-0.4e6", "666"};
@@ -134,8 +121,7 @@ TEST(number, floats) {
         obj = scm_number_new_float(strs[i]);
         REQUIRE(obj, "scm_number_new_float");
 
-        scm_type type = scm_object_get_type(obj);
-        REQUIRE_EQ(type, scm_type_float);
+        REQUIRE_EQ(obj->type, scm_type_float);
 
         str = scm_number_to_string(obj, 10);
         REQUIRE_STREQ(str, ress[i]);
@@ -146,12 +132,9 @@ TEST(number, floats) {
 }
 
 TEST(number, floats_out_of_range) {
-    int res, i;
+    int i;
     scm_object *obj;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+    init();
 
     const int n = 2;
     char *strs[n] = {"1e1000", "1e-1000"};
@@ -162,13 +145,10 @@ TEST(number, floats_out_of_range) {
 }
 
 TEST(number, integer_from_float) {
-    int res, i;
+    int i;
     scm_object *obj;
     char *str = NULL;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+    init();
 
     const int n = 5;
     char *strs[n] = {"100.0", "2e-3", "-0.999", "-0.4e6", "666"};
@@ -177,8 +157,7 @@ TEST(number, integer_from_float) {
         obj = scm_number_new_integer_from_float(strs[i]);
         REQUIRE(obj, "scm_number_new_integer_from_float");
 
-        scm_type type = scm_object_get_type(obj);
-        REQUIRE_EQ(type, scm_type_integer);
+        REQUIRE_EQ(obj->type, scm_type_integer);
 
         str = scm_number_to_string(obj, 10);
         REQUIRE_STREQ(str, ress[i]);
@@ -189,13 +168,10 @@ TEST(number, integer_from_float) {
 }
 
 TEST(number, float_from_integer) {
-    int res, i;
+    int i;
     scm_object *obj;
     char *str = NULL;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "call scm_number_env_init the second time");
+    init();
 
     const int n = 4;
     char *strs[n] = {"10", "10", "-10", "-10"};
@@ -205,8 +181,7 @@ TEST(number, float_from_integer) {
         obj = scm_number_new_float_from_integer(strs[i], radices[i]);
         REQUIRE(obj, "scm_number_new_float_from_integer");
 
-        scm_type type = scm_object_get_type(obj);
-        REQUIRE_EQ(type, scm_type_float);
+        REQUIRE_EQ(obj->type, scm_type_float);
 
         str = scm_number_to_string(obj, 10);
         REQUIRE_STREQ(str, ress[i]);

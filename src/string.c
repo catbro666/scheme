@@ -1,14 +1,18 @@
 #include "string.h"
+#include "char.h"
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct scm_string_st {
+    scm_object base;
     char *buf;
     int len;   /* NOTE: need proper type */
 } scm_string;
 
 scm_object *scm_string_new(char *buf, int len) {
     scm_string *str = malloc(sizeof(scm_string));
+
+    str->base.type = scm_type_string;
 
     if (len < 0) {
         len = strlen(buf);
@@ -17,36 +21,28 @@ scm_object *scm_string_new(char *buf, int len) {
     str->buf = buf;
     str->len = len;
 
-    scm_object *obj = scm_object_new(scm_type_string, (intptr_t)str);
-    if (!obj) {
-        if (str->buf) {
-            free(str->buf);
-        }
-        free(str);
-    }
-
-    return obj;
+    return (scm_object *)str;
 }
 
-static void scm_string_free(void *str) {
-    scm_string *s = (scm_string *)str;
+static void scm_string_free(scm_object *obj) {
+    scm_string *s = (scm_string *)obj;
     if (s->buf) {
         free(s->buf);
     }
     free(s);
 }
 
-int scm_string_length(scm_object *str) {
-    scm_string *data = (scm_string *)scm_object_get_data(str);
-    return data->len;
+int scm_string_length(scm_object *obj) {
+    scm_string *s = (scm_string *)obj;
+    return s->len;
 }
 
-scm_object *scm_string_ref(scm_object *str, int k) {
-    scm_string *data = (scm_string *)scm_object_get_data(str);
-    if (k < 0 || k >= data->len) {
+scm_object *scm_string_ref(scm_object *obj, int k) {
+    scm_string *s = (scm_string *)obj;
+    if (k < 0 || k >= s->len) {
         return NULL;
     }
-    return scm_chars[(int)data->buf[k]];
+    return (scm_object *)scm_chars[(int)s->buf[k]];
 }
 
 static int initialized = 0;

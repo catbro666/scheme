@@ -1,3 +1,4 @@
+#include "../src/char.h"
 #include "../src/port.h"
 #include "../src/string.h"
 #include "../src/number.h"
@@ -10,6 +11,8 @@ static void init() {
     int res;
     res = scm_object_env_init();
     REQUIRE(!res, "scm_object_env_init");
+    res = scm_char_env_init();
+    REQUIRE(!res, "scm_char_env_init");
     res = scm_port_env_init();
     REQUIRE(!res, "scm_port_env_init");
     res = scm_string_env_init();
@@ -163,7 +166,7 @@ TEST(token, integer) {
         o = scm_token_get_obj(t);
 
         REQUIRE_EQ(scm_token_get_type(t), scm_token_type_number);
-        REQUIRE_EQ(scm_object_get_type(o), scm_type_integer);
+        REQUIRE_EQ(o->type, scm_type_integer);
         str = scm_number_to_string(o, 10);
         REQUIRE_STREQ(str, expected[i]);
 
@@ -195,7 +198,7 @@ TEST(token, float) {
         o = scm_token_get_obj(t);
 
         REQUIRE_EQ(scm_token_get_type(t), scm_token_type_number);
-        REQUIRE_EQ(scm_object_get_type(o), scm_type_float);
+        REQUIRE_EQ(o->type, scm_type_float);
         str = scm_number_to_string(o, 10);
         REQUIRE_STREQ(str, expected[i]);
 

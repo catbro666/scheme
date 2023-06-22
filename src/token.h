@@ -5,9 +5,9 @@
 #include <stddef.h> /* NULL */
 
 typedef enum {
-    scm_token_type_true = 0,
+    scm_token_type_eof = 0,
+    scm_token_type_true,
     scm_token_type_false,
-    scm_token_type_eof,
     scm_token_type_char,
     scm_token_type_number,
     scm_token_type_string,

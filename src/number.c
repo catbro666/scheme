@@ -17,10 +17,12 @@
  * exact -> inexact */
 
 typedef struct scm_integer_st {
+    scm_object base;
     long val;
 } scm_integer;
 
 typedef struct scm_float_st {
+    scm_object base;
     double val;
 } scm_float;
 
@@ -29,93 +31,84 @@ static const char chars[] = {
     '9', 'a', 'b', 'c', 'd', 'e', 'f',
 };
 
-static void scm_number_free(void *n) {
-    free(n);
+static void scm_number_free(scm_object *obj) {
+    free(obj);
 }
 
 scm_object *scm_number_new_integer(const char *num, int radix) {
-    scm_object *obj = NULL;
-    scm_integer *data = malloc(sizeof(scm_integer));
+    scm_integer *i = malloc(sizeof(scm_integer));
+
+    i->base.type = scm_type_integer;
 
     errno = 0;
-    data->val = strtol(num, NULL, radix);
+    i->val = strtol(num, NULL, radix);
     if (errno == ERANGE) {  /* TODO: support bn */
         goto err;
     }
 
-    obj = scm_object_new(scm_type_integer, (intptr_t)data);
-
+    return (scm_object *)i;
 err:
-    if (!obj) {
-        if (data) free(data);
-    }
-    return obj;
+    free(i);
+    return NULL;
 }
 
 scm_object *scm_number_new_float_from_integer(const char *num, int radix) {
-    scm_object *obj = NULL;
-    scm_float *data = malloc(sizeof(scm_float));
     long val;
+    scm_float *f = malloc(sizeof(scm_float));
+
+    f->base.type = scm_type_float;
 
     errno = 0;
     val = strtol(num, NULL, radix);
     if (errno == ERANGE) {  /* TODO: support bn */
         goto err;
     }
-    data->val = (double)val;   /* XXX: lost precision */
+    f->val = (double)val;   /* XXX: lost precision */
 
-    obj = scm_object_new(scm_type_float, (intptr_t)data);
-
+    return (scm_object *)f;
 err:
-    if (!obj) {
-        if (data) free(data);
-    }
-    return obj;
+    free(f);
+    return NULL;
 }
 
 scm_object *scm_number_new_float(const char *num) {
-    scm_object *obj = NULL;
-    scm_float *data = malloc(sizeof(scm_float));
+    scm_float *f = malloc(sizeof(scm_float));
+
+    f->base.type = scm_type_float;
 
     errno = 0;
-    data->val = strtod(num, NULL);
+    f->val = strtod(num, NULL);
     if (errno == ERANGE) {
         goto err;
     }
 
-    obj = scm_object_new(scm_type_float, (intptr_t)data);
-
+    return (scm_object *)f;
 err:
-    if (!obj) {
-        if (data) free(data);
-    }
-    return obj;
+    free(f);
+    return NULL;
 }
 
 scm_object *scm_number_new_integer_from_float(const char *num) {
-    scm_object *obj = NULL;
-    scm_integer *data = malloc(sizeof(scm_integer));
     double val;
+    scm_integer *i = malloc(sizeof(scm_integer));
+
+    i->base.type = scm_type_integer;
 
     errno = 0;
     val = strtod(num, NULL);
     if (errno == ERANGE) {
         goto err;
     }
-    data->val = lrint(val);  /* XXX: lost precision */
+    i->val = lrint(val);  /* XXX: lost precision */
 
-    obj = scm_object_new(scm_type_integer, (intptr_t)data);
-
+    return (scm_object *)i;
 err:
-    if (!obj) {
-        if (data) free(data);
-    }
-    return obj;
+    free(i);
+    return NULL;
 }
 
 int scm_number_is_exact(scm_object *obj) {
-    scm_type type = scm_object_get_type(obj);
-    if (type == scm_type_integer) {
+    if (obj->type == scm_type_integer) {
         return 1;
     }
     else {
@@ -160,26 +153,25 @@ char *scm_number_to_string(scm_object *obj, int radix) {
     buf = malloc(256+2);
     s = buf;
 
-    scm_type type = scm_object_get_type(obj);
-    if (type == scm_type_integer) {
-        scm_integer *data = (scm_integer *)scm_object_get_data(obj);
+    if (obj->type == scm_type_integer) {
+        scm_integer *i = (scm_integer *)obj;
         unsigned long val;
         switch (radix) {
         case 16:
         case 8:
         case 2:
-            if (data->val < 0) {
+            if (i->val < 0) {
                 buf[0] = '-';
                 ++s;
-                val = -data->val;
+                val = -i->val;
             }
             else {
-                val = data->val;
+                val = i->val;
             }
             ulong_to_string(val, s, radix);
             break;
         default: /* 10 */
-            (void) snprintf(buf, 256, "%ld", data->val);
+            (void) snprintf(buf, 256, "%ld", i->val);
             break;
         }
     }
@@ -188,14 +180,14 @@ char *scm_number_to_string(scm_object *obj, int radix) {
             free(buf);
             return NULL;    /* inexact number only support radix 10 */
         }
-        scm_float *data = (scm_float *)scm_object_get_data(obj);
-        (void) snprintf(buf, 256, "%.16g", data->val);
+        scm_float *f = (scm_float *)obj;
+        (void) snprintf(buf, 256, "%.16g", f->val);
         /* add .0 if it looks like an integer */
         while (*s != 'E' && *s != 'e' && *s != '.') {
-          if (*s++ == 0) {
-            sprintf(s-1, ".0");
-            break;
-          }
+            if (*s++ == 0) {
+                sprintf(s-1, ".0");
+                break;
+            }
         }
     }
 

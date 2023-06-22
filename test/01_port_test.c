@@ -9,8 +9,6 @@ TEST(port, string_input_port) {
     REQUIRE(!res, "scm_object_env_init");
     res = scm_port_env_init();
     REQUIRE(!res, "scm_port_env_init");
-    res = scm_port_env_init();
-    REQUIRE(!res, "call scm_port_env_init the second time");
 
     char *buf = "a 0";
     scm_object *port = string_input_port_new(buf, 3);
