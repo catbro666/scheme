@@ -1,6 +1,7 @@
 #include "../src/char.h"
 #include "../src/port.h"
 #include "../src/string.h"
+#include "../src/symbol.h"
 #include "../src/number.h"
 #include "../src/token.h"
 #include <tau/tau.h>
@@ -17,6 +18,8 @@ static void init() {
     REQUIRE(!res, "scm_port_env_init");
     res = scm_string_env_init();
     REQUIRE(!res, "scm_string_env_init");
+    res = scm_symbol_env_init();
+    REQUIRE(!res, "scm_symbol_env_init");
     res = scm_number_env_init();
     REQUIRE(!res, "scm_number_env_init");
     res = scm_token_env_init();
@@ -85,31 +88,20 @@ TEST(token, identifier) {
     scm_object *port = string_input_port_new("ab1 !+-.@ + - ...", -1);
     REQUIRE(port, "string_input_port_new");
 
-    scm_object *expected[] = {
-        scm_chars['a'], scm_chars['b'], scm_chars['1'],
-        scm_chars['!'], scm_chars['+'], scm_chars['-'], scm_chars['.'], scm_chars['@'],
-        scm_chars['+'],
-        scm_chars['-'],
-        scm_chars['.'], scm_chars['.'], scm_chars['.'],
+    char *expected[] = {
+        "ab1", "!+-.@", "+", "-", "...",
     };
-    int lens[] = {3, 5, 1, 1, 3};
-    int n = 1;
+    int n = sizeof(expected) / sizeof(char *);
 
     scm_token *t;
     scm_object *o;
-    int c = 0;
     for (i = 0; i < n; ++i) {
-        int m = lens[i];
-
         t = scm_token_read(port);
         REQUIRE(t, "scm_token_read");
         o = scm_token_get_obj(t);
 
         REQUIRE_EQ(scm_token_get_type(t), scm_token_type_identifier);
-        REQUIRE_EQ(scm_string_length(o), m);
-        for (int j = 0; j < m; ++j) {
-            REQUIRE_EQ(scm_string_ref(o, j), expected[c++]);
-        }
+        REQUIRE_STREQ(scm_symbol_get_string(o), expected[i]);
         scm_object_free(o);
         scm_token_free(t);
     }

@@ -2,6 +2,7 @@
 #include "port.h"
 #include "char.h"
 #include "string.h"
+#include "symbol.h"
 #include "number.h"
 
 #include <string.h>
@@ -159,12 +160,13 @@ static int is_exponent_marker(int c) {
 }
 
 static scm_token *make_peculiar_identifier(const char *str, int len) {
-    char *s = strncpy(NULL, str, len);
-    if (!s) return NULL;
+    char *dest = malloc(len + 1);
+    if (!dest) return NULL;
+    strncpy(dest, str, len + 1);
 
-    scm_object *obj = scm_string_new(s, len);
+    scm_object *obj = scm_symbol_new(dest, len);
     if (!obj) {
-        free(s);
+        free(dest);
         return NULL;
     }
 
@@ -239,7 +241,7 @@ static scm_token *read_identifier(scm_object *port, int c) {
 
     str[i] = '\0';
 
-    return scm_token_new(scm_token_type_identifier, scm_string_new(str, i));
+    return scm_token_new(scm_token_type_identifier, scm_symbol_new(str, i));
 err:
     if (str) {
         free(str);
