@@ -53,7 +53,7 @@ scm_object *scm_cdr(scm_object *pair) {
 
 void scm_set_car(scm_object *pair, scm_object *o) {
     scm_pair *p = (scm_pair *)pair;
-    /* not free p->car here, may be referenced by others */
+    /* not free p->car here, may be referenced by others, leave it to gc to consider */
     p->car = o;
 }
 

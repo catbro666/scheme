@@ -8,7 +8,7 @@ typedef struct scm_vector_st {
     int len;
 } scm_vector;
 
-static scm_object *empty_vector = NULL;
+scm_object *scm_empty_vector = NULL;
 
 static scm_vector *scm_vector_alloc(count) {
     scm_vector *vec = calloc(1, sizeof(scm_vector));
@@ -21,6 +21,18 @@ static scm_vector *scm_vector_alloc(count) {
     return vec;
 }
 
+static scm_object *scm_vector_realloc(scm_object *vector, int count) {
+    scm_vector *vec = (scm_vector *)vector;
+    void *new_etls = realloc(vec->elts, count * sizeof(scm_object *));
+    if (!new_etls) {
+        return NULL;
+    }
+    vec->elts = new_etls;
+    vec->len = count;
+
+    return vector;
+}
+
 scm_object *scm_vector_new(int count, ...) {
     va_list objs;
     scm_object *obj;
@@ -29,7 +41,7 @@ scm_object *scm_vector_new(int count, ...) {
         return NULL;    /* invalid index */
     }
     if (count == 0)
-        return empty_vector;
+        return scm_empty_vector;
 
     scm_vector *vec = scm_vector_alloc(count);
 
@@ -43,12 +55,12 @@ scm_object *scm_vector_new(int count, ...) {
     return (scm_object *)vec;
 }
 
-void scm_vector_fill(scm_object *obj, scm_object *fill) {
-    scm_vector *vec = (scm_vector *)obj;
+void scm_vector_fill(scm_object *vector, scm_object *fill) {
+    scm_vector *vec = (scm_vector *)vector;
     int i = vec->len;
 
     while (i--) {
-        vec->elts[i] = fill; /* not free the old */
+        vec->elts[i] = fill; /* not free the old, leave it to gc to consider */
     }
 }
 
@@ -60,8 +72,8 @@ scm_object *scm_vector_new_fill(int count, scm_object *fill) {
     return vec;
 }
 
-static void scm_vector_free(scm_object *obj) {
-    scm_vector *vec = (scm_vector *)obj;
+static void scm_vector_free(scm_object *vector) {
+    scm_vector *vec = (scm_vector *)vector;
     int i = vec->len;
 
     if (i) {
@@ -73,19 +85,46 @@ static void scm_vector_free(scm_object *obj) {
     }
 }
 
-scm_object *scm_vector_ref(scm_object *obj, int k) {
-    scm_vector *vec = (scm_vector *)obj;
+scm_object *scm_vector_ref(scm_object *vector, int k) {
+    scm_vector *vec = (scm_vector *)vector;
 
-    if (k >= vec->len) {
+    if (k < 0 || k >= vec->len) {
         return NULL;    /* invalid index */
     }
 
     return vec->elts[k];
 }
 
-int scm_vector_length(scm_object *obj) {
-    scm_vector *vec = (scm_vector *)obj;
+int scm_vector_set(scm_object *vector, int k, scm_object *obj) {
+    scm_vector *vec = (scm_vector *)vector;
+
+    if (k < 0 || k >= vec->len) {
+        return 1;    /* invalid index */
+    }
+
+    vec->elts[k] = obj;
+    return 0;
+}
+
+int scm_vector_length(scm_object *vector) {
+    if (vector == scm_empty_vector)
+        return 0;
+
+    scm_vector *vec = (scm_vector *)vector;
     return vec->len;
+}
+
+scm_object *scm_vector_insert(scm_object *vector, scm_object *obj) {
+    scm_object *vec = NULL;
+    if (vector == scm_empty_vector) {
+        vec = scm_vector_new(1, obj);
+    }
+    else {
+        int len = scm_vector_length(vector);
+        vec = scm_vector_realloc(vector, len + 1);
+        scm_vector_set(vec, len, obj);
+    }
+    return vec;
 }
 
 static int initialized = 0;
@@ -93,7 +132,7 @@ static int initialized = 0;
 int scm_vector_env_init(void) {
     if (initialized) return 0;
 
-    empty_vector = (scm_object *)scm_vector_alloc(0);
+    scm_empty_vector = (scm_object *)scm_vector_alloc(0);
 
     scm_object_register(scm_type_vector, scm_vector_free);
 
