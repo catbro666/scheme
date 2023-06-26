@@ -649,6 +649,8 @@ int scm_token_env_init(void) {
     scm_token_eof_arr[0].obj = scm_eof;
     scm_token_true_arr[0].obj = scm_true;
     scm_token_false_arr[0].obj = scm_false;
+    scm_token_dot_arr[0].obj = scm_dot;
+    scm_token_rparen_arr[0].obj = scm_rparen;
     for (i = 0; i < CHAR_NUM; ++i) {
         scm_token_chars_arr[i].type = scm_token_type_char;
         scm_token_chars_arr[i].obj = scm_chars[i];

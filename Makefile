@@ -35,6 +35,7 @@ $(TARGET): $(OBJS) $(MAIN_OBJ)
 test: $(TEST_TARGETS)
 	@for test in $(TEST_TARGETS); do \
 		./$$test; \
+		echo; \
 	done
 
 $(TEST_TARGETS): %: $(OBJS) %.o

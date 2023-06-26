@@ -19,9 +19,13 @@ void scm_object_free(scm_object *obj) {
 static scm_object scm_eof_arr[1] = {{scm_type_eof}};
 static scm_object scm_true_arr[1] = {{scm_type_true}};
 static scm_object scm_false_arr[1] = {{scm_type_false}};
+static scm_object scm_dot_arr[1] = {{scm_type_dot}};
+static scm_object scm_rparen_arr[1] = {{scm_type_rparen}};
 scm_object *scm_eof = scm_eof_arr;
 scm_object *scm_true = scm_true_arr;
 scm_object *scm_false = scm_false_arr;
+scm_object *scm_dot = scm_dot_arr;
+scm_object *scm_rparen = scm_rparen_arr;
 
 static int initialized = 0;
 

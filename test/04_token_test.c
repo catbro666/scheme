@@ -50,6 +50,29 @@ TEST(token, simple) {
     scm_object_free(port);
 }
 
+TEST(token, simple_with_data) {
+    int i;
+    init();
+    scm_object *port = string_input_port_new("#t#f.)", -1);
+    REQUIRE(port, "string_input_port_new");
+
+    scm_object *expected[] =
+        { scm_true, scm_false, scm_dot, scm_rparen, scm_eof,
+        };
+    int n = sizeof(expected) / sizeof(scm_object *);
+
+    scm_token *t;
+    scm_object *o;
+    for (i = 0; i < n; ++i) {
+        t = scm_token_read(port);
+        o = scm_token_get_obj(t);
+        CHECK_EQ(o, expected[i]);
+        scm_object_free(o);
+        scm_token_free(t);
+    }
+    scm_object_free(port);
+}
+
 TEST(token, char) {
     int i;
     init();

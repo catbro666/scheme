@@ -8,18 +8,20 @@ typedef enum {
     scm_token_type_eof = 0,
     scm_token_type_true,
     scm_token_type_false,
-    scm_token_type_char,
-    scm_token_type_lparen,
+    scm_token_type_dot,
     scm_token_type_rparen,
+    scm_token_type_char,
+    /* above are static tokens containing object */
+    scm_token_type_number,
+    scm_token_type_string,
+    scm_token_type_identifier,
+    /* below are tokens without objects */
+    scm_token_type_lparen,
     scm_token_type_sharp_lparen,
     scm_token_type_quote,
     scm_token_type_bquote,
     scm_token_type_comma,
     scm_token_type_comma_at,
-    scm_token_type_dot,
-    scm_token_type_number,
-    scm_token_type_string,
-    scm_token_type_identifier,
     scm_token_type_max,
 } scm_token_type;
 

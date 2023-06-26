@@ -12,12 +12,12 @@ void init() {
     REQUIRE(!res, "scm_char_env_init");
 }
 
-TEST(object, eof_true_false) {
+TEST(object, eof_true_false_dot_rparen) {
     int i;
     init();
 
-    scm_object *objs[] = {scm_eof, scm_true, scm_false};
-    scm_type types[] = {scm_type_eof, scm_type_true, scm_type_false};
+    scm_object *objs[] = {scm_eof, scm_true, scm_false, scm_dot, scm_rparen};
+    scm_type types[] = {scm_type_eof, scm_type_true, scm_type_false, scm_type_dot, scm_type_rparen};
 
     for (i = 0; i < (int)(sizeof(objs)/sizeof(scm_object *)); ++i) {
       CHECK_EQ(objs[i]->type, types[i]);
@@ -40,8 +40,8 @@ TEST(object, cant_free_static_objects) {
     int i;
     init();
 
-    scm_object *objs[] = {scm_eof, scm_true, scm_false};
-    scm_type types[] = {scm_type_eof, scm_type_true, scm_type_false};
+    scm_object *objs[] = {scm_eof, scm_true, scm_false, scm_dot, scm_rparen};
+    scm_type types[] = {scm_type_eof, scm_type_true, scm_type_false, scm_type_dot, scm_type_rparen};
 
     for (i = 0; i < (int)(sizeof(objs)/sizeof(scm_object *)); ++i) {
       scm_object_free(objs[i]);
