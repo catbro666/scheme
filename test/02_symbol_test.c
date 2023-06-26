@@ -12,9 +12,7 @@ void init() {
 TEST(symbol, new) {
     init();
 
-    char *str = malloc(4);
-    strcpy(str, "ab1");
-    scm_object *obj = scm_symbol_new(str, 3);
+    scm_object *obj = scm_symbol_new("ab1", 3);
     REQUIRE(obj, "scm_symbol_new");
 
     REQUIRE_EQ(obj->type, scm_type_symbol);

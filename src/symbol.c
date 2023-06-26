@@ -9,7 +9,7 @@ typedef struct scm_symbol_st {
     int len;
 } scm_symbol;
 
-scm_object *scm_symbol_new(char *buf, int len) {
+scm_object *scm_symbol_new(const char *buf, int len) {
     scm_symbol *sym = malloc(sizeof(scm_symbol));
 
     sym->base.type = scm_type_symbol;
@@ -18,7 +18,9 @@ scm_object *scm_symbol_new(char *buf, int len) {
         len = strlen(buf);
     }
 
-    sym->buf = buf;
+    sym->buf = malloc(len + 1);
+    strncpy(sym->buf, buf, len);
+    sym->buf[len] = '\0';
     sym->len = len;
 
     return (scm_object *)sym;

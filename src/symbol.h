@@ -2,7 +2,7 @@
 #define SCHEME_SYMBOL_H
 #include "object.h"
 
-scm_object *scm_symbol_new(char *str, int size);
+scm_object *scm_symbol_new(const char *str, int size);
 
 char *scm_symbol_get_string(scm_object *obj);
 

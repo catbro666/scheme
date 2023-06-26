@@ -160,13 +160,8 @@ static int is_exponent_marker(int c) {
 }
 
 static scm_token *make_peculiar_identifier(const char *str, int len) {
-    char *dest = malloc(len + 1);
-    if (!dest) return NULL;
-    strncpy(dest, str, len + 1);
-
-    scm_object *obj = scm_symbol_new(dest, len);
+    scm_object *obj = scm_symbol_new(str, len);
     if (!obj) {
-        free(dest);
         return NULL;
     }
 
@@ -214,6 +209,7 @@ scm_token *read_char(scm_object *port) {
 }
 
 static scm_token *read_identifier(scm_object *port, int c) {
+    scm_token *tok = NULL;
     int size = 32, i = 0;
     char *str = malloc(size + 1);
 
@@ -241,12 +237,12 @@ static scm_token *read_identifier(scm_object *port, int c) {
 
     str[i] = '\0';
 
-    return scm_token_new(scm_token_type_identifier, scm_symbol_new(str, i));
+    tok =  scm_token_new(scm_token_type_identifier, scm_symbol_new(str, i));
 err:
     if (str) {
         free(str);
     }
-    return NULL;
+    return tok;
 }
 
 static scm_token *read_string(scm_object *port) {
@@ -514,7 +510,6 @@ err:
  * return NULL when error */
 scm_token *scm_token_read(scm_object *port) {
     int c, c2;
-    char buf[4] = {0};
 
     skip_space_comment(port);
 
@@ -578,9 +573,12 @@ scm_token *scm_token_read(scm_object *port) {
             if (is_delimiter_or_eof(c2)) {
                 scm_input_port_readc(port);
 
-                buf[0] = (char)c;
-                buf[1] = '\0';
-                return make_peculiar_identifier(buf, 1);
+                if (c == '+') {
+                    return make_peculiar_identifier("+", 1);
+                }
+                else {
+                    return make_peculiar_identifier("-", 1);
+                }
             }
             else {
                 scm_input_port_unreadc(port, c);
@@ -604,11 +602,7 @@ scm_token *scm_token_read(scm_object *port) {
             if (!is_delimiter_or_eof(c)) {
                 return NULL;    /* bad syntax */
             }
-            buf[0] = '.';
-            buf[1] = '.';
-            buf[2] = '.';
-            buf[3] = '\0';
-            return make_peculiar_identifier(buf, 3);
+            return make_peculiar_identifier("...", 3);
         default:
             return NULL;    /* bad syntax */
         }
