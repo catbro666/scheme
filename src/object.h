@@ -16,7 +16,6 @@ typedef enum {
     scm_type_float,
     scm_type_string,
     scm_type_identifier,
-    scm_type_symbol,
     scm_type_pair,
     scm_type_vector,
     scm_type_input_port,

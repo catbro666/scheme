@@ -630,9 +630,8 @@ scm_object *scm_token_get_obj(scm_token *tok) {
 }
 
 void scm_token_free(scm_token *tok) {
-    /* skip the static tokens and non-object tokens */
-    if ((tok->type >= scm_token_type_eof && tok->type <= scm_token_type_char) ||
-        tok->obj == NULL) {
+    /* skip the static tokens */
+    if (tok->type >= scm_token_type_eof) {
         return;
     }
     free(tok);

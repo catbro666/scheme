@@ -12,7 +12,7 @@ typedef struct scm_symbol_st {
 scm_object *scm_symbol_new(const char *buf, int len) {
     scm_symbol *sym = malloc(sizeof(scm_symbol));
 
-    sym->base.type = scm_type_symbol;
+    sym->base.type = scm_type_identifier;
 
     if (len < 0) {
         len = strlen(buf);
@@ -43,7 +43,7 @@ static int initialized = 0;
 int scm_symbol_env_init(void) {
     if (initialized) return 0;
 
-    scm_object_register(scm_type_symbol, scm_symbol_free);
+    scm_object_register(scm_type_identifier, scm_symbol_free);
 
     initialized = 1;
     return 0;

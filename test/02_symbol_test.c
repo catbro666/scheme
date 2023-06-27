@@ -15,7 +15,7 @@ TEST(symbol, new) {
     scm_object *obj = scm_symbol_new("ab1", 3);
     REQUIRE(obj, "scm_symbol_new");
 
-    REQUIRE_EQ(obj->type, scm_type_symbol);
+    REQUIRE_EQ(obj->type, scm_type_identifier);
 
     char *res = scm_symbol_get_string(obj);
 

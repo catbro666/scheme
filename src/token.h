@@ -5,16 +5,20 @@
 #include <stddef.h> /* NULL */
 
 typedef enum {
-    scm_token_type_eof = 0,
-    scm_token_type_true,
-    scm_token_type_false,
-    scm_token_type_dot,
-    scm_token_type_rparen,
-    scm_token_type_char,
-    /* above are static tokens containing object */
-    scm_token_type_number,
+    scm_token_type_number = 0,
     scm_token_type_string,
     scm_token_type_identifier,
+    /* above are dynamic tokens which need to be free'd */
+
+    scm_token_type_eof,
+    scm_token_type_true,
+    scm_token_type_false,
+    scm_token_type_char,
+    /* above are simple data that can be an independent object */
+
+    scm_token_type_dot,     /* must be in list */
+    scm_token_type_rparen,  /* must has leading lparen */
+
     /* below are tokens without objects */
     scm_token_type_lparen,
     scm_token_type_sharp_lparen,
