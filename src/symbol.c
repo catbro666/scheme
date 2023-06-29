@@ -27,16 +27,20 @@ scm_object *scm_symbol_new(const char *buf, int len) {
 }
 
 static void scm_symbol_free(scm_object *obj) {
-    scm_symbol *s = (scm_symbol *)obj;
-    if (s->buf) {
-        free(s->buf);
-    }
-    free(s);
+    /* no need to free symbols after we implement hash table */
+    (void)obj;
+    return;
 }
 
 char *scm_symbol_get_string(scm_object *obj) {
     scm_symbol *s = (scm_symbol *)obj;
     return s->buf;
+}
+
+int scm_symbol_equal(scm_object *obj1, scm_object *obj2) {
+    scm_symbol *s1 = (scm_symbol *)obj1;
+    scm_symbol *s2 = (scm_symbol *)obj2;
+    return s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len);
 }
 
 static int initialized = 0;
