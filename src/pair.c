@@ -124,6 +124,118 @@ int scm_list_length(scm_object *list) {
     return i;
 }
 
+scm_object *scm_caar(scm_object *pair) {
+    return scm_car(scm_car(pair));
+}
+
+scm_object *scm_cadr(scm_object *pair) {
+    return scm_car(scm_cdr(pair));
+}
+
+scm_object *scm_cdar(scm_object *pair) {
+    return scm_cdr(scm_car(pair));
+}
+
+scm_object *scm_cddr(scm_object *pair) {
+    return scm_cdr(scm_cdr(pair));
+}
+
+scm_object *scm_caaar(scm_object *pair) {
+    return scm_car(scm_car(scm_car(pair)));
+}
+
+scm_object *scm_caadr(scm_object *pair) {
+    return scm_car(scm_car(scm_cdr(pair)));
+}
+
+scm_object *scm_cadar(scm_object *pair) {
+    return scm_car(scm_cdr(scm_car(pair)));
+}
+
+scm_object *scm_caddr(scm_object *pair) {
+    return scm_car(scm_cdr(scm_cdr(pair)));
+}
+
+scm_object *scm_cdaar(scm_object *pair) {
+    return scm_cdr(scm_car(scm_car(pair)));
+}
+
+scm_object *scm_cdadr(scm_object *pair) {
+    return scm_cdr(scm_car(scm_cdr(pair)));
+}
+
+scm_object *scm_cddar(scm_object *pair) {
+    return scm_cdr(scm_cdr(scm_car(pair)));
+}
+
+scm_object *scm_cdddr(scm_object *pair) {
+    return scm_cdr(scm_cdr(scm_cdr(pair)));
+}
+
+scm_object *scm_caaaar(scm_object *pair) {
+    return scm_car(scm_car(scm_car(scm_car(pair))));
+}
+
+scm_object *scm_caaadr(scm_object *pair) {
+    return scm_car(scm_car(scm_car(scm_cdr(pair))));
+}
+
+scm_object *scm_caadar(scm_object *pair) {
+    return scm_car(scm_car(scm_cdr(scm_car(pair))));
+}
+
+scm_object *scm_caaddr(scm_object *pair) {
+    return scm_car(scm_car(scm_cdr(scm_cdr(pair))));
+}
+
+scm_object *scm_cadaar(scm_object *pair) {
+    return scm_car(scm_cdr(scm_car(scm_car(pair))));
+}
+
+scm_object *scm_cadadr(scm_object *pair) {
+    return scm_car(scm_cdr(scm_car(scm_cdr(pair))));
+}
+
+scm_object *scm_caddar(scm_object *pair) {
+    return scm_car(scm_cdr(scm_cdr(scm_car(pair))));
+}
+
+scm_object *scm_cadddr(scm_object *pair) {
+    return scm_car(scm_cdr(scm_cdr(scm_cdr(pair))));
+}
+
+scm_object *scm_cdaaar(scm_object *pair) {
+    return scm_cdr(scm_car(scm_car(scm_car(pair))));
+}
+
+scm_object *scm_cdaadr(scm_object *pair) {
+    return scm_cdr(scm_car(scm_car(scm_cdr(pair))));
+}
+
+scm_object *scm_cdadar(scm_object *pair) {
+    return scm_cdr(scm_car(scm_cdr(scm_car(pair))));
+}
+
+scm_object *scm_cdaddr(scm_object *pair) {
+    return scm_cdr(scm_car(scm_cdr(scm_cdr(pair))));
+}
+
+scm_object *scm_cddaar(scm_object *pair) {
+    return scm_cdr(scm_cdr(scm_car(scm_car(pair))));
+}
+
+scm_object *scm_cddadr(scm_object *pair) {
+    return scm_cdr(scm_cdr(scm_car(scm_cdr(pair))));
+}
+
+scm_object *scm_cdddar(scm_object *pair) {
+    return scm_cdr(scm_cdr(scm_cdr(scm_car(pair))));
+}
+
+scm_object *scm_cddddr(scm_object *pair) {
+    return scm_cdr(scm_cdr(scm_cdr(scm_cdr(pair))));
+}
+
 static int initialized = 0;
 
 int scm_pair_env_init(void) {
