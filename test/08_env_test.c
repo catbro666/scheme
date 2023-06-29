@@ -68,7 +68,7 @@ TEST(env, normal) {
     ret = scm_env_set_var(env, b, scm_false);
     REQUIRE(!ret, "scm_env_set_var(env, b, scm_false)");
     ret = scm_env_set_var(env, c, scm_null);
-    REQUIRE(ret, "scm_env_set_var(env, c, scm_null)");
+    REQUIRE(ret, "can't set variable before its definition");
 
     o = scm_env_lookup_var(env, a);
     REQUIRE(o, "scm_env_lookup_var(env, a)");
