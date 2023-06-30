@@ -9,6 +9,7 @@ typedef struct scm_string_st {
     int len;   /* NOTE: need proper type */
 } scm_string;
 
+/* scm_string_new doesn't copy buf */
 scm_object *scm_string_new(char *buf, int len) {
     scm_string *str = malloc(sizeof(scm_string));
 
@@ -22,6 +23,19 @@ scm_object *scm_string_new(char *buf, int len) {
     str->len = len;
 
     return (scm_object *)str;
+}
+
+/* scm_string_copy_new copies buf, for tests */
+scm_object *scm_string_copy_new(const char *buf, int len) {
+    if (len < 0) {
+        len = strlen(buf);
+    }
+
+    char *new_buf = malloc(len + 1);
+    strncpy(new_buf, buf, len);
+    new_buf[len] = '\0';
+
+    return scm_string_new(new_buf, len);
 }
 
 static void scm_string_free(scm_object *obj) {

@@ -44,9 +44,8 @@ TEST(string, not_specify_length) {
     int i;
     init();
 
-    char *str = malloc(4);
-    strcpy(str, "ab1");
-    scm_object *obj = scm_string_new(str, -1);
+    char *str = "ab1";
+    scm_object *obj = scm_string_copy_new(str, -1);
     REQUIRE(obj, "scm_string_new");
 
     CHECK_EQ(obj->type, scm_type_string);

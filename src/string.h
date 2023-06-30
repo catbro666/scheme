@@ -3,6 +3,7 @@
 #include "object.h"
 
 scm_object *scm_string_new(char *str, int size);
+scm_object *scm_string_copy_new(const char *buf, int len);
 int scm_string_length(scm_object *str);
 scm_object *scm_string_ref(scm_object *str, int k);
 
