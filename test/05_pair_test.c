@@ -69,6 +69,7 @@ TEST(pair, list) {
     scm_object *list = scm_list(2, scm_chars['a'], scm_chars['b']);
     REQUIRE(list, "scm_list");
     REQUIRE_EQ(list->type, scm_type_pair);
+    REQUIRE(scm_is_list(list));
     REQUIRE_EQ(scm_list_length(list), 2);
 
     scm_object *car = scm_car(list);
@@ -79,6 +80,8 @@ TEST(pair, list) {
     scm_object *cdr = scm_cdr(list);
     REQUIRE(cdr, "scm_cdr");
     REQUIRE_EQ(cdr->type, scm_type_pair);
+    REQUIRE(scm_is_list(cdr));
+    REQUIRE_EQ(scm_list_length(cdr), 1);
 
     scm_object *cadr = scm_car(cdr);
     REQUIRE(cadr, "second element of list");
@@ -88,8 +91,19 @@ TEST(pair, list) {
     scm_object *cddr = scm_cdr(cdr);
     REQUIRE(cddr, "empty list");
     REQUIRE_EQ(cddr->type, scm_type_null);
+    REQUIRE(scm_is_list(cddr));
+    REQUIRE_EQ(scm_list_length(cddr), 0);
 
     scm_object_free(list);
+
+    scm_object *o1 = scm_cons(scm_true, scm_false);
+    scm_object *o2 = scm_true;
+    REQUIRE(!scm_is_list(o1));
+    REQUIRE(!scm_is_list(o2));
+    REQUIRE_EQ(scm_list_length(o1), -1);
+    REQUIRE_EQ(scm_list_length(o2), -1);
+    scm_object_free(o1);
+    scm_object_free(o2);
 }
 
 TEST(pair, list_ref) {

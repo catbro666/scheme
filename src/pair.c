@@ -112,16 +112,24 @@ scm_object *scm_list_ref(scm_object *list, int k) {
     return scm_car(p);
 }
 
-/* TODO: solve cycle list */
+/* TODO: solve cycle list
+ * return -1 when the parameter is not a list */
 int scm_list_length(scm_object *list) {
     int i = 0;
     scm_object *p = list;
     while (p != scm_null) {
+        if (p->type != scm_type_pair) {
+            return -1;  /* not a list */
+        }
         p = scm_cdr(p);
         ++i;
     }
 
     return i;
+}
+
+int scm_is_list(scm_object *list) {
+    return scm_list_length(list) != -1;
 }
 
 scm_object *scm_caar(scm_object *pair) {
