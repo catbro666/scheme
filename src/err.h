@@ -22,7 +22,10 @@ extern jmp_buf *scm_jmp;
 #define SCM_THROW \
     longjmp(*scm_jmp, 1)
 
+typedef void (*scm_error_free_fn) (void *);
 void scm_error(const char *fmt, ...);
+/* @fn: function pointer used to release resource before throw */
+void scm_error_free(scm_error_free_fn fn, void *p, const char *fmt, ...);
 char *scm_error_msg();
 
 #endif /* SCHEME_ERR_H */

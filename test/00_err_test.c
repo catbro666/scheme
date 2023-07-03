@@ -14,7 +14,6 @@ TEST(err, no_exception) {
         i++;
     } SCM_CATCH {
         REQUIRE(0, "should not reach here");
-        scm_error_msg();
     } SCM_END_TRY;
 
     REQUIRE_EQ(i, 1);
@@ -30,7 +29,6 @@ TEST(err, throw_exception) {
     SCM_TRY {
         REQUIRE(scm_jmp, "setjmp in TRY block");
         scm_error("%s", err_msg);
-        SCM_THROW;
         REQUIRE(0, "should not reach here");
     } SCM_CATCH {
         REQUIRE(!scm_jmp, "restore scm_jmp to the previous value");
@@ -75,4 +73,29 @@ TEST(err, nested_try_catch) {
     REQUIRE_STREQ(buf, in_err);
     REQUIRE_STREQ(out_msg, out_err);
     REQUIRE(!scm_jmp, "restore scm_jmp to the initial value");
+}
+
+void my_free(void *p) {
+    (*((int *)p))++;
+}
+
+TEST(err, scm_error_free) {
+    char *msg = NULL;
+    char *err_msg = "ERROR!!!";
+    int x = 1;
+
+    REQUIRE(!scm_jmp, "initially NULL");
+
+    SCM_TRY {
+        REQUIRE(scm_jmp, "setjmp in TRY block");
+        scm_error_free(my_free, &x, "%s", err_msg);
+        REQUIRE(0, "should not reach here");
+    } SCM_CATCH {
+        REQUIRE(!scm_jmp, "restore scm_jmp to the previous value");
+        msg = scm_error_msg();
+    } SCM_END_TRY;
+
+    REQUIRE_STREQ(msg, err_msg);
+    REQUIRE_EQ(x, 2);   /* free_fn is called */
+    REQUIRE(!scm_jmp, "restore scm_jmp to the previous value");
 }
