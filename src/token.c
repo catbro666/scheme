@@ -265,9 +265,11 @@ static scm_token *read_string(scm_object *port) {
 
         if (i == size) {
             if (size == 0) {
+                size = 32;
                 str = malloc(size + 1);
             }
             else {
+                size *= 2;
                 str = realloc(str, size + 1);
             }
         }
