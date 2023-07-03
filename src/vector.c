@@ -52,6 +52,7 @@ scm_object *scm_vector_new(int count, ...) {
         vec->elts[i] = obj;
     }
 
+    va_end(objs);
     return (scm_object *)vec;
 }
 

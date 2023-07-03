@@ -67,7 +67,7 @@ scm_object *scm_list(int count, ...) {
     va_list objs;
     va_start(objs, count);
 
-    scm_object *head = NULL;
+    scm_object *head = scm_null;
     scm_object *tail = NULL;
     scm_object *pair = NULL;
     scm_object *obj = NULL;
@@ -87,10 +87,9 @@ scm_object *scm_list(int count, ...) {
         tail = pair;
     }
 
-    if (head)
-        return head;
-    else
-        return scm_null;
+    va_end(objs);
+
+    return head;
 err:
     if (head) {
         scm_pair_free(head);

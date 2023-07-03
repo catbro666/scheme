@@ -45,7 +45,7 @@ static int string_input_port_readc(scm_input_port *port) {
     }
 
     if (p->pos == p->size) {
-        return -1;
+        return -1;  /* eof */
     }
     else {
         return p->buf[p->pos++];
@@ -65,7 +65,9 @@ static int string_input_port_unreadc(scm_input_port *port, int c) {
 
 static int string_input_port_peekc(scm_input_port *port) {
     int c = string_input_port_readc(port);
-    string_input_port_unreadc(port, c);
+    if (c != -1) {
+        string_input_port_unreadc(port, c);
+    }
     return c;
 }
 
