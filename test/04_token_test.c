@@ -1,10 +1,4 @@
-#include "../src/char.h"
-#include "../src/port.h"
-#include "../src/string.h"
-#include "../src/symbol.h"
-#include "../src/number.h"
-#include "../src/token.h"
-#include <tau/tau.h>
+#include "test.h"
 
 TAU_MAIN()
 
@@ -43,7 +37,7 @@ TEST(token, simple) {
 
     scm_token *t;
     for (i = 0; i < n; ++i) {
-        t = scm_token_read(port);
+        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
         CHECK_EQ(t, expected[i]); 
         scm_token_free(t);
     }
@@ -64,7 +58,7 @@ TEST(token, simple_with_data) {
     scm_token *t;
     scm_object *o;
     for (i = 0; i < n; ++i) {
-        t = scm_token_read(port);
+        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
         o = scm_token_get_obj(t);
         CHECK_EQ(o, expected[i]);
         scm_object_free(o);
@@ -92,7 +86,7 @@ TEST(token, char) {
     scm_object *o;
     short type;
     for (i = 0; i < n; ++i) {
-        t = scm_token_read(port);
+        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
         REQUIRE(t, "scm_token_read");
 
         type = scm_token_get_type(t);
@@ -119,7 +113,7 @@ TEST(token, identifier) {
     scm_token *t;
     scm_object *o;
     for (i = 0; i < n; ++i) {
-        t = scm_token_read(port);
+        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
         REQUIRE(t, "scm_token_read");
         o = scm_token_get_obj(t);
 
@@ -146,7 +140,7 @@ TEST(token, string) {
 
     scm_token *t;
     scm_object *o;
-    t = scm_token_read(port);
+    REQUIRE_NOEXCEPTION(t = scm_token_read(port));
     REQUIRE(t, "scm_token_read");
     o = scm_token_get_obj(t);
 
@@ -176,7 +170,7 @@ TEST(token, integer) {
     scm_object *o;
     char *str;
     for (i = 0; i < n; ++i) {
-        t = scm_token_read(port);
+        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
         REQUIRE(t, "scm_token_read");
         o = scm_token_get_obj(t);
 
@@ -208,7 +202,7 @@ TEST(token, float) {
     scm_object *o;
     char *str;
     for (i = 0; i < n; ++i) {
-        t = scm_token_read(port);
+        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
         REQUIRE(t, "scm_token_read");
         o = scm_token_get_obj(t);
 
@@ -229,6 +223,7 @@ TEST(token, float) {
 TEST(token, bad_char) {
     int i;
     init();
+    char buf[1024];
     char *inputs[] = {
         "#\\", "#\\aa", "#\\spac", "#\\space2", "#\\newlin", "#\\newline2",
     };
@@ -237,8 +232,8 @@ TEST(token, bad_char) {
     for (i = 0; i < n; ++i) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
-        scm_token *t = scm_token_read(port);
-        REQUIRE(!t, "scm_token_read");
+        snprintf(buf, sizeof(buf), "lexer: bad character constant `%s`", inputs[i]);
+        REQUIRE_EXCEPTION(buf, scm_token_read(port));
         scm_object_free(port);
     }
 }
@@ -247,16 +242,17 @@ TEST(token, bad_identifier) {
     int i;
     init();
     char *inputs[] = {
-        /* the first character isn't in <initial> */
-        "3a", "\\a", "+a", "-a", ".a", "@a", "..", "....", "我"
+        /* the first character isn't in <initial>
+         * or the subsequent characters aren't in <subsequent> */
+        "\\a", ".a", "@a", "..", "....", "我",
+        "a我",
     };
     int n = sizeof(inputs) / sizeof(char *);
 
     for (i = 0; i < n; ++i) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
-        scm_token *t = scm_token_read(port);
-        REQUIRE(!t, "scm_token_read");
+        REQUIRE_EXCEPTION("lexer: bad identifier", scm_token_read(port));
         scm_object_free(port);
     }
 }
@@ -272,8 +268,7 @@ TEST(token, bad_string) {
     for (i = 0; i < n; ++i) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
-        scm_token *t = scm_token_read(port);
-        REQUIRE(!t, "scm_token_read");
+        REQUIRE_EXCEPTION("lexer: bad string", scm_token_read(port));
         scm_object_free(port);
     }
 }
@@ -283,9 +278,9 @@ TEST(token, bad_number) {
     init();
     char *inputs[] = {
         "#10", "#c12", "#e#i1", "#x#d1", "1#o",    /* prefix */
-        "#e", "#d.", "#x12g", "1a", "#o9", "#b3", /* no digit, bad digit */
+        "#e", "#d.", "#x12g", "1a", "#o9", "#b3", "+a", "-a", /* no digit, bad digit */
         /* sign must be at the begin, # must be after the digit(s) but no digit(s) after # */
-        "++1", "+-1", "1+", "1.2.3", ".#", "-#", "-.#", "1#1", "1#.#0",
+        "++1", "+-1", "1+", "1.2.3", "-#", "-.#", "1#1", "1#.#0",
         "#x1.2", "#o1#", "#b1e1", "#x1e2",   /* float must be decimal */ 
         "1e++1", "1e+-1", "1e1+", "1e1#", "1e1.2", "1e.1", "1e", "1e+", "1e1a", /* suffix */
         "9223372036854775808", "-9223372036854775809", "1e1000", "1e-1000", /* out of range */
@@ -295,8 +290,7 @@ TEST(token, bad_number) {
     for (i = 0; i < n; ++i) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
-        scm_token *t = scm_token_read(port);
-        REQUIRE(!t, "scm_token_read");
+        REQUIRE_EXCEPTION("lexer: bad number", scm_token_read(port));
         scm_object_free(port);
     }
 }

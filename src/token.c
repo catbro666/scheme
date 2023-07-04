@@ -1,4 +1,5 @@
 #include "token.h"
+#include "err.h"
 #include "port.h"
 #include "char.h"
 #include "string.h"
@@ -168,18 +169,24 @@ static scm_token *make_peculiar_identifier(const char *str, int len) {
     return scm_token_new(scm_token_type_identifier, obj);
 }
 
+static const char *char_error_fmt = "lexer: bad character constant `#\\%s`";
+static const char *identifier_error_fmt = "lexer: bad identifier `%s`";
+static const char *string_error_fmt = "lexer: bad string `%s`";
+static const char *number_error_prefix = "lexer: bad number";
+
 scm_token *read_char(scm_object *port) {
+    scm_token *tok = NULL;
     int c;
     int i = 0;
-    const int buf_size = 7;
-    char buf[buf_size + 1];
+    int size = 7;
+    char *str = malloc(size + 1);
 
     c = scm_input_port_readc(port);
     if (is_eof(c))
-        return NULL; /* bad syntax */
+        goto err;
 
     while (1) {
-      buf[i++] = (char)c;
+      str[i++] = (char)c;
 
       c = scm_input_port_peekc(port);
       if (is_delimiter_or_eof(c))
@@ -187,62 +194,74 @@ scm_token *read_char(scm_object *port) {
 
       scm_input_port_readc(port);
 
-      if (i == buf_size) {
-          return NULL;  /* bad syntax */
+      if (i == size) {
+          size *= 2;
+          str = realloc(str, size + 1);
       }
     }
 
+    str[i] = '\0';
     if (i == 1) {
-        return scm_token_chars[(int)buf[0]];
+        tok = scm_token_chars[(int)str[0]];
     }
     else if (i == 5 || i == 7) {
-        buf[i] = '\0';
-        if (!strcmp(buf, "space")) {
-            return scm_token_chars[' '];
+        if (!strcmp(str, "space")) {
+            tok = scm_token_chars[' '];
         }
-        else if (!strcmp(buf, "newline")) {
-            return scm_token_chars['\n']; /* consider \r when displaying */
+        else if (!strcmp(str, "newline")) {
+            tok = scm_token_chars['\n']; /* consider \r when displaying */
+        }
+        else {
+            goto err;
         }
     } 
+    else {
+        goto err;
+    }
 
-    return NULL; /* bad syntax */
+    free(str);
+    return tok;
+err:
+    str[i] = '\0';
+    scm_error_free(free, str, char_error_fmt, str);
+    return NULL; /* impossible to reach here */
 }
 
 static scm_token *read_identifier(scm_object *port, int c) {
-    scm_token *tok = NULL;
     int size = 32, i = 0;
     char *str = malloc(size + 1);
+    scm_object *obj = NULL;
 
+    str[i++] = (char)c;
     while (1) {
-        str[i++] = (char)c;
-
         c = scm_input_port_peekc(port);
 
         if (is_delimiter_or_eof(c)) {
             break;
-        } 
+        }
 
         scm_input_port_readc(port);
-
-        if (!is_subsequent(c)) {
-            free(str);
-            goto err;    /* bad syntax */
-        }
 
         if (i == size) {
             size *= 2;
             str = realloc(str, size + 1);
         }
+
+        str[i++] = (char)c;
+
+        if (!is_subsequent(c)) {
+            goto err;
+        }
     }
 
     str[i] = '\0';
-
-    tok =  scm_token_new(scm_token_type_identifier, scm_symbol_new(str, i));
+    obj = scm_symbol_new(str, i);
+    free(str);
+    return scm_token_new(scm_token_type_identifier, obj);
 err:
-    if (str) {
-        free(str);
-    }
-    return tok;
+    str[i] = '\0';
+    scm_error_free(free, str, identifier_error_fmt, str);
+    return NULL; /* impossible to reach here */
 }
 
 static scm_token *read_string(scm_object *port) {
@@ -256,40 +275,57 @@ static scm_token *read_string(scm_object *port) {
           break;
         }
 
-        if (c == '\\') {
-            c = scm_input_port_readc(port);    
-            if (c != '"' && c != '\\') {
-                goto err;   /* bad syntax */
-            }
-        }
-
         if (i == size) {
             if (size == 0) {
                 size = 32;
-                str = malloc(size + 1);
+                str = malloc(size + 2); /* +2 for the following error case */
             }
             else {
                 size *= 2;
-                str = realloc(str, size + 1);
+                str = realloc(str, size + 2);
+            }
+        }
+
+        if (c == '\\') {
+            c = scm_input_port_readc(port);
+            if (c != '"' && c != '\\') {
+                str[i++] = '\\';
+                str[i++] = c;
+                goto err;   /* bad syntax */
             }
         }
 
         str[i++] = (char)c;
     }
     
-    if (is_eof(c)) {
-        goto err;    /* bad syntax: no ending " */
-    }
-
     if (i) {
         str[i] = '\0';
     }
 
-    return scm_token_new(scm_token_type_string, scm_string_new(str, i));
+    if (is_eof(c)) {
+        goto err;    /* bad syntax: no ending " */
+    }
 
+    /* XXX: shrink the string size? */
+    return scm_token_new(scm_token_type_string, scm_string_new(str, i));
 err:
-    if (str) free(str);
+    if (str)
+        scm_error_free(free, str, string_error_fmt, str);
+    else
+        scm_error(string_error_fmt, "");
     return NULL;
+}
+
+static void number_error(char *buf, char *num, int len, char *msg) {
+    if (len) num[len] = '\0';
+    scm_error_free(free, num, "%s `%s%s`;\n%s",
+                   number_error_prefix, buf, num ? num : "", msg);
+}
+
+static void number_error_char(char *buf, char *num, int len, char *msg, char c) {
+    if (len) num[len] = '\0';
+    scm_error_free(free, num, "%s `%s%s`;\n%s `%c`",
+                   number_error_prefix, buf, num ? num : "", msg, c);
 }
 
 /* TODO: support complex, rational */
@@ -299,13 +335,14 @@ err:
 static scm_token *read_number(scm_object *port) {
     /* number containing point, exponent or sharp is inexact by default */
     int radix = -1, exactness = -1, is_float = 0;
-    int c, c2, i = 2, j;
+    int c, c2, i = 2, j = 0;
     int num_size = 0;
     char *num = NULL;
     int has_point = 0, has_sharp = 0, has_exponent = 0, has_digit = 0;
     scm_object *obj;
     scm_token *tok = NULL;
     c = scm_input_port_peekc(port);
+    char buf[7] = {0};
 
     /* prefix */
     while (i > 0) {
@@ -314,47 +351,49 @@ static scm_token *read_number(scm_object *port) {
         }
 
         scm_input_port_readc(port);
+        buf[j++] = c;
 
         c2 = scm_input_port_peekc(port);
+        buf[j++] = c2;
         switch (c2) {
         case 'i': case 'I':
             if (exactness != -1) {
-                goto err; /* bad syntax: duplicate */
+                number_error(buf, num, 0, "duplicate exactness specification");
             }
             exactness = 0;
             break;
         case 'e': case 'E':
             if (exactness != -1) {
-                goto err; /* bad syntax: duplicate */
+                number_error(buf, num, 0, "duplicate exactness specification");
             }
             exactness = 1;
             break;
         case 'b': case 'B':
             if (radix != -1) {
-                goto err; /* bad syntax: duplicate */
+                number_error(buf, num, 0, "duplicate radix specification");
             }
             radix = 2;
             break;
         case 'o': case 'O':
             if (radix != -1) {
-                goto err; /* bad syntax: duplicate */
+                number_error(buf, num, 0, "duplicate radix specification");
             }
             radix = 8;
             break;
         case 'd': case 'D':
             if (radix != -1) {
-                goto err; /* bad syntax: duplicate */
+                number_error(buf, num, 0, "duplicate radix specification");
             }
             radix = 10;
             break;
         case 'x': case 'X':
             if (radix != -1) {
-                goto err; /* bad syntax: duplicate */
+                number_error(buf, num, 0, "duplicate radix specification");
             }
             radix = 16;
             break;
         default:
-            goto err; /* bad syntax */
+            number_error_char(buf, num, 0, "bad `#` indicator", c2);
         }
         scm_input_port_readc(port);
 
@@ -376,32 +415,6 @@ static scm_token *read_number(scm_object *port) {
 
         scm_input_port_readc(port);
 
-        /* sign must be at the beginning */
-        if (i == j && (c == '+' || c == '-')) {
-        }
-        else if (c == '.') {
-            if (radix != 10 || has_point) {
-                goto err; /* bad syntax */
-            }
-            has_point = 1;
-        }
-        else if (c == '#') {
-            if (radix != 10 || !has_digit) {
-                goto err; /* bad syntax */
-            }
-            c = '0';    /* change to 0 */
-            has_sharp = 1;
-        }
-        else if (is_radix_digit(c, radix)) {
-            if (has_sharp) {
-                goto err; /* bad syntax */  
-            }
-            has_digit = 1;
-        }
-        else {
-            goto err; /* bad syntax: bad digit */
-        }
-
         if (i == num_size) {
             if (num_size == 0) {
                 num_size = 16;
@@ -415,17 +428,47 @@ static scm_token *read_number(scm_object *port) {
 
         num[i++] = (char)c;
 
+        /* sign must be at the beginning */
+        if (i == (j+1) && (c == '+' || c == '-')) {
+        }
+        else if (c == '.') {
+            if (radix != 10 || has_point) {
+                number_error(buf, num, i, "`.` can only appear in decimal radix"
+                             " and at most once");
+            }
+            has_point = 1;
+        }
+        else if (c == '#') {
+            if (radix != 10 || !has_digit) {
+                number_error(buf, num, i, "`#`s can only appear at the end of a"
+                             " decimal number with at least one leading digit");
+            }
+            num[i-1] = '0'; /* change to 0 */
+            has_sharp = 1;
+        }
+        else if (is_radix_digit(c, radix)) {
+            if (has_sharp) {
+                number_error(buf, num, i, "`.` can only appear in decimal radix"
+                             " and at most once");
+            }
+            has_digit = 1;
+        }
+        else {
+            number_error_char(buf, num, i, "bad digit", c);
+        }
+
         c = scm_input_port_peekc(port);
     }
 
     if (!has_digit) {
-        goto err; /* bad syntax: no digit */
+        number_error(buf, num, i, "no digit");
     }
 
     /* suffix */
     if (is_exponent_marker(c)) {
         if (radix != 10) {
-            goto err; /* bad syntax */
+            number_error(buf, num, i, "numbers containing exponents must be in "
+                         "decimal radix");
         }
         has_digit = 0;
         j = i;  /* save the beginning index */
@@ -435,18 +478,6 @@ static scm_token *read_number(scm_object *port) {
                 break;
             }
             scm_input_port_readc(port);
-
-            if (i == j) {   /* the exponent marker */
-            }
-            /* sign must be at the beginning */
-            else if (i == (j+1) && (c == '+' || c == '-')) {
-            }
-            else if (isdigit(c)) {
-               has_digit = 1; 
-            }
-            else {
-                goto err;   /* bad syntax: bad digit */
-            }
 
             if (i == num_size) {
                 if (num_size == 0) {
@@ -458,11 +489,24 @@ static scm_token *read_number(scm_object *port) {
             }
 
             num[i++] = (char)c;
+
+            if (i == (j+1)) {   /* the exponent marker */
+            }
+            /* sign must be at the beginning */
+            else if (i == (j+2) && (c == '+' || c == '-')) {
+            }
+            else if (isdigit(c)) {
+               has_digit = 1;
+            }
+            else {
+                number_error_char(buf, num, i, "bad digit", c);
+            }
+
             c = scm_input_port_peekc(port);
         }
 
         if (!has_digit) {
-            goto err;   /* bad syntax: no digit */
+            number_error(buf, num, i, "no digit");
         }
         has_exponent = 1;
     }
@@ -492,19 +536,16 @@ static scm_token *read_number(scm_object *port) {
         obj = scm_number_new_float(num);
     }
     else {
-        obj =scm_number_new_float_from_integer(num, radix);
+        obj = scm_number_new_float_from_integer(num, radix);
     }
 
     if (!obj) {
-        goto err;   /* out of range */
+        number_error(buf, num, i, "out of range");
     }
 
     tok = scm_token_new(scm_token_type_number, obj);
 
-err:
-    if (num) {
-        free(num);
-    }
+    free(num);
     return tok;
 }
 
@@ -512,6 +553,7 @@ err:
  * return NULL when error */
 scm_token *scm_token_read(scm_object *port) {
     int c, c2;
+    char buf[5] = {0};
 
     skip_space_comment(port);
 
@@ -595,20 +637,28 @@ scm_token *scm_token_read(scm_object *port) {
                 scm_input_port_unreadc(port, c);
                 return read_number(port);
             }
+            buf[0] = (char)c;
+            buf[1] = (char)c2;
             scm_input_port_readc(port);
             c = scm_input_port_readc(port);
+            buf[2] = (char)c;
             if (c2 != '.' || c != '.') {
-                return NULL;    /* bad syntax */
+                goto err;
             }
             c = scm_input_port_peekc(port);
+            buf[4] = (char)c;
             if (!is_delimiter_or_eof(c)) {
-                return NULL;    /* bad syntax */
+                goto err;
             }
             return make_peculiar_identifier("...", 3);
         default:
-            return NULL;    /* bad syntax */
+            buf[0] = (char)c;
+            goto err;
         }
     }
+err:
+    scm_error(identifier_error_fmt, buf);
+    return NULL;    /* impossible to reach here */
 }
 
 static scm_token *scm_token_new(short type, scm_object *obj) {

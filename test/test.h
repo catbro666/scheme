@@ -11,10 +11,8 @@
 #include "../src/token.h"
 #include "../src/pair.h"
 #include "../src/vector.h"
-#include "../src/exp.h"
 #include "../src/read.h"
 #include "../src/env.h"
-#include "../src/eval.h"
 
 #include <tau/tau.h>
 
