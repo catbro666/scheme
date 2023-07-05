@@ -19,44 +19,53 @@
 /* @msg: the expected error msg
  * @exp: the expression that is expected to throw exception */
 #define REQUIRE_EXCEPTION(msg, exp) \
-    char *err = NULL; \
-    SCM_TRY { \
-        exp; \
-    } SCM_CATCH { \
-        err = scm_error_msg(); \
-    } SCM_END_TRY; \
+    do { \
+        char *err = NULL; \
+        SCM_TRY { \
+            exp; \
+        } SCM_CATCH { \
+            err = scm_error_msg(); \
+        } SCM_END_TRY; \
  \
-    REQUIRE_SUBSTREQ(err, msg, strlen(msg))
+        REQUIRE_SUBSTREQ(err, msg, strlen(msg)); \
+    } while (0)
+
 
 #define REQUIRE_NOEXCEPTION(exp) \
-    char *err = NULL; \
-    SCM_TRY { \
-        exp; \
-    } SCM_CATCH { \
-        err = scm_error_msg(); \
-    } SCM_END_TRY; \
+    do { \
+        char *err = NULL; \
+        SCM_TRY { \
+            exp; \
+        } SCM_CATCH { \
+            err = scm_error_msg(); \
+        } SCM_END_TRY; \
  \
-    REQUIRE(!err, "no exception throwed")
+        REQUIRE(!err, "no exception throwed"); \
+    } while (0)
 
 #define CHECK_EXCEPTION(msg, exp) \
-    char *err = NULL; \
-    SCM_TRY { \
-        exp; \
-    } SCM_CATCH { \
-        err = scm_error_msg(); \
-    } SCM_END_TRY; \
+    do { \
+        char *err = NULL; \
+        SCM_TRY { \
+            exp; \
+        } SCM_CATCH { \
+            err = scm_error_msg(); \
+        } SCM_END_TRY; \
  \
-    CHECK_SUBSTREQ(err, msg, strlen(msg))
+        CHECK_SUBSTREQ(err, msg, strlen(msg)); \
+    } while (0)
 
 #define CHECK_NOEXCEPTION(exp) \
-    char *err = NULL; \
-    SCM_TRY { \
-        exp; \
-    } SCM_CATCH { \
-        err = scm_error_msg(); \
-    } SCM_END_TRY; \
+    do { \
+        char *err = NULL; \
+        SCM_TRY { \
+            exp; \
+        } SCM_CATCH { \
+            err = scm_error_msg(); \
+        } SCM_END_TRY; \
  \
-    CHECK(!err, "no exception throwed")
+        CHECK(!err, "no exception throwed"); \
+    } while (0);
 
 #endif /* SCHEME_TEST_H */
 

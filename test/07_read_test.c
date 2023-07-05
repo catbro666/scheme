@@ -1,14 +1,4 @@
-#include "../src/object.h"
-#include "../src/char.h"
-#include "../src/number.h"
-#include "../src/string.h"
-#include "../src/symbol.h"
-#include "../src/port.h"
-#include "../src/token.h"
-#include "../src/pair.h"
-#include "../src/vector.h"
-#include "../src/read.h"
-#include <tau/tau.h>
+#include "test.h"
 
 TAU_MAIN()
 
@@ -48,8 +38,7 @@ TEST(read, simple_datum) {
 
     int n = sizeof(expected) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        o = scm_object_read(port);
-        REQUIRE(o, "scm_object_read(port)");
+        REQUIRE_NOEXCEPTION(o = scm_object_read(port));
         REQUIRE_EQ(o->type, expected[i]);
         scm_object_free(o);
     }
@@ -64,28 +53,24 @@ TEST(read, list) {
     scm_object *port = string_input_port_new("() (1) (1 . 2) ((1))", -1);
     REQUIRE(port, "string_input_port_new");
 
-    l1 = scm_object_read(port);
-    REQUIRE(l1, "scm_object_read(port)");
+    REQUIRE_NOEXCEPTION(l1 = scm_object_read(port));
     REQUIRE_EQ(l1, scm_null);
 
-    l2 = scm_object_read(port);
-    REQUIRE(l2, "scm_object_read(port)");
+    REQUIRE_NOEXCEPTION(l2 = scm_object_read(port));
     REQUIRE_EQ(l2->type, scm_type_pair);
     o = scm_car(l2);
     REQUIRE_EQ(o->type, scm_type_integer);
     o = scm_cdr(l2);
     REQUIRE_EQ(o, scm_null);
 
-    l3 = scm_object_read(port);
-    REQUIRE(l3, "scm_object_read(port)");
+    REQUIRE_NOEXCEPTION(l3 = scm_object_read(port));
     REQUIRE_EQ(l3->type, scm_type_pair);
     o = scm_car(l3);
     REQUIRE_EQ(o->type, scm_type_integer);
     o = scm_cdr(l3);
     REQUIRE_EQ(o->type, scm_type_integer);
 
-    l4 = scm_object_read(port);
-    REQUIRE(l4, "scm_object_read(port)");
+    REQUIRE_NOEXCEPTION(l4 = scm_object_read(port));
     REQUIRE_EQ(l4->type, scm_type_pair);
     o = scm_car(l4);
     REQUIRE_EQ(o->type, scm_type_pair);
@@ -106,21 +91,18 @@ TEST(read, vector) {
     scm_object *port = string_input_port_new("#() #(1) #(#(1))", -1);
     REQUIRE(port, "string_input_port_new");
 
-    v1 = scm_object_read(port);
-    REQUIRE(v1, "scm_object_read(port)");
+    REQUIRE_NOEXCEPTION(v1 = scm_object_read(port));
     REQUIRE_EQ(v1->type, scm_type_vector);
     REQUIRE_EQ(v1, scm_empty_vector);
 
-    v2 = scm_object_read(port);
-    REQUIRE(v2, "scm_object_read(port)");
+    REQUIRE_NOEXCEPTION(v2 = scm_object_read(port));
     REQUIRE_EQ(v2->type, scm_type_vector);
     REQUIRE_EQ(scm_vector_length(v2), 1);
     o = scm_vector_ref(v2, 0);
     REQUIRE(o, "scm_vector_ref(v2, 0)");
     REQUIRE_EQ(o->type, scm_type_integer);
 
-    v3 = scm_object_read(port);
-    REQUIRE(v3, "scm_object_read(port)");
+    REQUIRE_NOEXCEPTION(v3 = scm_object_read(port));
     REQUIRE_EQ(v3->type, scm_type_vector);
     REQUIRE_EQ(scm_vector_length(v3), 1);
     o = scm_vector_ref(v3, 0);
@@ -151,8 +133,7 @@ TEST(read, quote_quasiquote) {
 
     int n = sizeof(expected_type) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        quote = scm_object_read(port);
-        REQUIRE(quote, "scm_object_read(port)");
+        REQUIRE_NOEXCEPTION(quote = scm_object_read(port));
         REQUIRE_EQ(quote->type, scm_type_pair);
         REQUIRE_EQ(scm_list_length(quote), 2);
         o = scm_list_ref(quote, 0);
@@ -185,8 +166,7 @@ TEST(read, unquote_unquote_splicing) {
 
     int n = sizeof(expected_type) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        unquote = scm_object_read(port);
-        REQUIRE(unquote, "scm_object_read(port)");
+        REQUIRE_NOEXCEPTION(unquote = scm_object_read(port));
         REQUIRE_EQ(unquote->type, scm_type_pair);
         REQUIRE_EQ(scm_list_length(unquote), 2);
         o = scm_list_ref(unquote, 0);
@@ -227,9 +207,21 @@ TEST(read, invalid_token) {
         p1, p2, p3, p4, p5, p6, p7, p8, p9,
     };
 
+    char *msgs[] = {
+        "parser: unexpected `)`",
+        "parser: illegal use of `.`",
+        "parser: illegal use of `.`",
+        "parser: illegal use of `.`",
+        "parser: illegal use of `.`",
+        "parser: unexpected `)`",
+        "parser: illegal use of `.`",
+        "parser: missing right parenthese",
+        "parser: missing right parenthese",
+    };
+
     int n = 9;
     for (int i = 0; i < n; ++i) {
-        CHECK(!scm_object_read(ports[i]));
+        CHECK_EXCEPTION(msgs[i], scm_object_read(ports[i]));
         scm_object_free(ports[i]);
     }
 }

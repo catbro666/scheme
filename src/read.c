@@ -1,4 +1,5 @@
 #include "read.h"
+#include "err.h"
 #include "port.h"
 #include "symbol.h"
 #include "token.h"
@@ -13,6 +14,11 @@ static scm_object *read_quasiquote(scm_object *port);
 static scm_object *read_unquote(scm_object *port);
 static scm_object *read_unquote_splicing(scm_object *port);
 
+static void read_list_error(scm_object *head, char *msg) {
+    scm_object_free(head);
+    scm_error("parser: %s", msg);
+}
+
 static scm_object *read_list(scm_object *port) {
     scm_object *head = scm_null;
     scm_object *tail = NULL;
@@ -23,22 +29,23 @@ static scm_object *read_list(scm_object *port) {
     while (1) {
         obj = scm_object_read_ex(port, 1);
         if (!obj || obj == scm_eof) {
-            goto err;    /* bad syntax: incomplete parenthesis */
+            read_list_error(head, "missing right parenthese");
         }
         if (obj == scm_rparen) {
             if (expect_last) {  /* dot must be followed with an object */
-                goto err;
+                read_list_error(head, "unexpected `)`");
             }
             break;
         }
         
         if (expect_rparen) {
-            goto err;   /* illegal use of . */
+            read_list_error(head, "illegal use of `.`");
         }
 
         if (obj == scm_dot) {
+            /* dot can't be at the beginning of list or after dot */
             if (head == scm_null || expect_last) {
-                goto err;   /* dot can't be at the beginning of list or after dot */ 
+                read_list_error(head, "illegal use of `.`");
             }
             expect_last = 1;
             continue;
@@ -63,9 +70,6 @@ static scm_object *read_list(scm_object *port) {
     }
 
     return head;
-err:
-    scm_object_free(head);
-    return NULL;
 }
 
 static scm_object *read_vector(scm_object *port) {
@@ -73,10 +77,16 @@ static scm_object *read_vector(scm_object *port) {
     scm_object *obj = NULL;
 
     while (1) {
-        obj = scm_object_read_ex(port, 2);
+        SCM_TRY {
+            obj = scm_object_read_ex(port, 2); /* handle . */
+        } SCM_CATCH {
+            scm_object_free(vec);
+            SCM_THROW;
+        } SCM_END_TRY;
+
         if (!obj || obj == scm_eof) {
             scm_object_free(vec);
-            return NULL;    /* bad syntax: incomplete parenthesis */
+            scm_error("parser: missing right parenthese");
         }
         if (obj == scm_rparen) {
             break;
@@ -107,20 +117,20 @@ static scm_object *read_unquote_splicing(scm_object *port) {
  * @in_seq: denote if the current object is in list or vector
  *          0 means not, 1 means in list, 2 means in vector */
 static scm_object *scm_object_read_ex(scm_object *port, int in_seq) {
-    scm_object *obj = NULL;
     scm_token *tok = scm_token_read(port);
-    if (!tok) {
-        return NULL;
-    }
     short type = scm_token_get_type(tok);
+    scm_object *obj = scm_token_get_obj(tok);
+    scm_token_free(tok);
+
     /* simple datum */
     if (type <= scm_token_type_rparen) {
-        if ((type == scm_token_type_dot && in_seq != 1) ||
-            (type == scm_token_type_rparen && !in_seq)) {
-            goto end;   /* illegal use */
+        if (type == scm_token_type_dot && in_seq != 1) {
+            scm_error("parser: illegal use of `.`");
         }
-        obj = scm_token_get_obj(tok);
-        goto end;
+        if (type == scm_token_type_rparen && !in_seq) {
+            scm_error("parser: unexpected `)`");
+        }
+        return obj;
     }
     /* compound datum */
     else {
@@ -146,13 +156,10 @@ static scm_object *scm_object_read_ex(scm_object *port, int in_seq) {
         case scm_token_type_comma_at: /* must within a list or vector of quasiquote */
             obj = read_unquote_splicing(port);
             break;
-        default:        /* should not reach here */
-            goto end;
+         /* impossible to reach here */
         }
     }
 
-end:
-    scm_token_free(tok);
     return obj;
 }
 
