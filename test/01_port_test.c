@@ -3,12 +3,17 @@
 
 TAU_MAIN()
 
-TEST(port, string_input_port) {
+void init() {
     int res;
     res = scm_object_env_init();
     REQUIRE(!res, "scm_object_env_init");
     res = scm_port_env_init();
     REQUIRE(!res, "scm_port_env_init");
+}
+
+TEST(port, string_input_port) {
+    int res;
+    init();
 
     char *buf = "a 0";
     scm_object *port = string_input_port_new(buf, 3);
@@ -65,6 +70,24 @@ TEST(port, string_input_port) {
     REQUIRE_EQ(six, '6');
     eof = scm_input_port_readc(port);
     REQUIRE_EQ(eof, -1);
+
+    scm_object_free(port);
+}
+
+TEST(port, string_output_port) {
+    init();
+
+    char buf[32];
+
+    scm_object *port = string_output_port_new(buf, 3);
+    REQUIRE(port, "string_output_port_new");
+
+    REQUIRE_EQ(scm_output_port_writec(port, 'a'), 1);
+    REQUIRE_EQ(scm_output_port_writec(port, 'b'), 1);
+    REQUIRE_EQ(scm_output_port_writec(port, '\0'), 1);
+    REQUIRE_EQ(scm_output_port_writec(port, 'x'), 0);
+
+    REQUIRE_STREQ(buf, "ab");
 
     scm_object_free(port);
 }
