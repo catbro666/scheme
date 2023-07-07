@@ -12,6 +12,7 @@
 #include "../src/pair.h"
 #include "../src/vector.h"
 #include "../src/read.h"
+#include "../src/write.h"
 #include "../src/env.h"
 
 #include <tau/tau.h>

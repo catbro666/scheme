@@ -6,7 +6,7 @@
 #include "pair.h"
 #include "vector.h"
 
-static scm_object *scm_object_read_ex(scm_object *port, int in_seq);
+static scm_object *scm_read_ex(scm_object *port, int in_seq);
 static scm_object *read_list(scm_object *port);
 static scm_object *read_vector(scm_object *port);
 static scm_object *read_quote(scm_object *port);
@@ -27,7 +27,7 @@ static scm_object *read_list(scm_object *port) {
     int expect_last = 0, expect_rparen = 0;
 
     while (1) {
-        obj = scm_object_read_ex(port, 1);
+        obj = scm_read_ex(port, 1);
         if (!obj || obj == scm_eof) {
             read_list_error(head, "missing right parenthese");
         }
@@ -78,7 +78,7 @@ static scm_object *read_vector(scm_object *port) {
 
     while (1) {
         SCM_TRY {
-            obj = scm_object_read_ex(port, 2); /* handle . */
+            obj = scm_read_ex(port, 2); /* handle . */
         } SCM_CATCH {
             scm_object_free(vec);
             SCM_THROW;
@@ -98,25 +98,25 @@ static scm_object *read_vector(scm_object *port) {
 }
 
 static scm_object *read_quote(scm_object *port) {
-    return scm_list(2, scm_symbol_new("quote", 5), scm_object_read(port));
+    return scm_list(2, scm_symbol_new("quote", 5), scm_read(port));
 }
 
 static scm_object *read_quasiquote(scm_object *port) {
-    return scm_list(2, scm_symbol_new("quasiquote", 10), scm_object_read(port));
+    return scm_list(2, scm_symbol_new("quasiquote", 10), scm_read(port));
 }
 
 static scm_object *read_unquote(scm_object *port) {
-    return scm_list(2, scm_symbol_new("unquote", 7), scm_object_read(port));
+    return scm_list(2, scm_symbol_new("unquote", 7), scm_read(port));
 }
 
 static scm_object *read_unquote_splicing(scm_object *port) {
-    return scm_list(2, scm_symbol_new("unquote-splicing", 16), scm_object_read(port));
+    return scm_list(2, scm_symbol_new("unquote-splicing", 16), scm_read(port));
 }
 
 /* read an object from port
  * @in_seq: denote if the current object is in list or vector
  *          0 means not, 1 means in list, 2 means in vector */
-static scm_object *scm_object_read_ex(scm_object *port, int in_seq) {
+static scm_object *scm_read_ex(scm_object *port, int in_seq) {
     scm_token *tok = scm_token_read(port);
     short type = scm_token_get_type(tok);
     scm_object *obj = scm_token_get_obj(tok);
@@ -163,6 +163,6 @@ static scm_object *scm_object_read_ex(scm_object *port, int in_seq) {
     return obj;
 }
 
-scm_object *scm_object_read(scm_object *port) {
-    return scm_object_read_ex(port, 0);
+scm_object *scm_read(scm_object *port) {
+    return scm_read_ex(port, 0);
 }

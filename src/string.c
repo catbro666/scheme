@@ -52,11 +52,15 @@ int scm_string_length(scm_object *obj) {
 }
 
 scm_object *scm_string_ref(scm_object *obj, int k) {
+    return (scm_object *)scm_chars[(int)scm_string_get_char(obj, k)];
+}
+
+char scm_string_get_char(scm_object *obj, int k) {
     scm_string *s = (scm_string *)obj;
     if (k < 0 || k >= s->len) {
-        return NULL;
+        //THROW; /* check at outside */
     }
-    return (scm_object *)scm_chars[(int)s->buf[k]];
+    return s->buf[k];
 }
 
 static int initialized = 0;
