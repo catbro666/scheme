@@ -38,7 +38,7 @@ TEST(read, simple_datum) {
 
     int n = sizeof(expected) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(o = scm_object_read(port));
+        REQUIRE_NOEXC(o = scm_read(port));
         REQUIRE_EQ(o->type, expected[i]);
         scm_object_free(o);
     }
@@ -53,24 +53,24 @@ TEST(read, list) {
     scm_object *port = string_input_port_new("() (1) (1 . 2) ((1))", -1);
     REQUIRE(port, "string_input_port_new");
 
-    REQUIRE_NOEXCEPTION(l1 = scm_object_read(port));
+    REQUIRE_NOEXC(l1 = scm_read(port));
     REQUIRE_EQ(l1, scm_null);
 
-    REQUIRE_NOEXCEPTION(l2 = scm_object_read(port));
+    REQUIRE_NOEXC(l2 = scm_read(port));
     REQUIRE_EQ(l2->type, scm_type_pair);
     o = scm_car(l2);
     REQUIRE_EQ(o->type, scm_type_integer);
     o = scm_cdr(l2);
     REQUIRE_EQ(o, scm_null);
 
-    REQUIRE_NOEXCEPTION(l3 = scm_object_read(port));
+    REQUIRE_NOEXC(l3 = scm_read(port));
     REQUIRE_EQ(l3->type, scm_type_pair);
     o = scm_car(l3);
     REQUIRE_EQ(o->type, scm_type_integer);
     o = scm_cdr(l3);
     REQUIRE_EQ(o->type, scm_type_integer);
 
-    REQUIRE_NOEXCEPTION(l4 = scm_object_read(port));
+    REQUIRE_NOEXC(l4 = scm_read(port));
     REQUIRE_EQ(l4->type, scm_type_pair);
     o = scm_car(l4);
     REQUIRE_EQ(o->type, scm_type_pair);
@@ -91,18 +91,18 @@ TEST(read, vector) {
     scm_object *port = string_input_port_new("#() #(1) #(#(1))", -1);
     REQUIRE(port, "string_input_port_new");
 
-    REQUIRE_NOEXCEPTION(v1 = scm_object_read(port));
+    REQUIRE_NOEXC(v1 = scm_read(port));
     REQUIRE_EQ(v1->type, scm_type_vector);
     REQUIRE_EQ(v1, scm_empty_vector);
 
-    REQUIRE_NOEXCEPTION(v2 = scm_object_read(port));
+    REQUIRE_NOEXC(v2 = scm_read(port));
     REQUIRE_EQ(v2->type, scm_type_vector);
     REQUIRE_EQ(scm_vector_length(v2), 1);
     o = scm_vector_ref(v2, 0);
     REQUIRE(o, "scm_vector_ref(v2, 0)");
     REQUIRE_EQ(o->type, scm_type_integer);
 
-    REQUIRE_NOEXCEPTION(v3 = scm_object_read(port));
+    REQUIRE_NOEXC(v3 = scm_read(port));
     REQUIRE_EQ(v3->type, scm_type_vector);
     REQUIRE_EQ(scm_vector_length(v3), 1);
     o = scm_vector_ref(v3, 0);
@@ -133,7 +133,7 @@ TEST(read, quote_quasiquote) {
 
     int n = sizeof(expected_type) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(quote = scm_object_read(port));
+        REQUIRE_NOEXC(quote = scm_read(port));
         REQUIRE_EQ(quote->type, scm_type_pair);
         REQUIRE_EQ(scm_list_length(quote), 2);
         o = scm_list_ref(quote, 0);
@@ -166,7 +166,7 @@ TEST(read, unquote_unquote_splicing) {
 
     int n = sizeof(expected_type) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(unquote = scm_object_read(port));
+        REQUIRE_NOEXC(unquote = scm_read(port));
         REQUIRE_EQ(unquote->type, scm_type_pair);
         REQUIRE_EQ(scm_list_length(unquote), 2);
         o = scm_list_ref(unquote, 0);
@@ -221,7 +221,7 @@ TEST(read, invalid_token) {
 
     int n = 9;
     for (int i = 0; i < n; ++i) {
-        CHECK_EXCEPTION(msgs[i], scm_object_read(ports[i]));
+        CHECK_EXC(msgs[i], scm_read(ports[i]));
         scm_object_free(ports[i]);
     }
 }

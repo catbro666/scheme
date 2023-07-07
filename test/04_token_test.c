@@ -37,8 +37,7 @@ TEST(token, simple) {
 
     scm_token *t;
     for (i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
-        CHECK_EQ(t, expected[i]); 
+        REQUIRE_NOEXC_EQ(t = scm_token_read(port), expected[i]);
         scm_token_free(t);
     }
     scm_object_free(port);
@@ -58,7 +57,7 @@ TEST(token, simple_with_data) {
     scm_token *t;
     scm_object *o;
     for (i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
+        REQUIRE_NOEXC(t = scm_token_read(port));
         o = scm_token_get_obj(t);
         CHECK_EQ(o, expected[i]);
         scm_object_free(o);
@@ -86,8 +85,7 @@ TEST(token, char) {
     scm_object *o;
     short type;
     for (i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
-        REQUIRE(t, "scm_token_read");
+        REQUIRE_NOEXC(t = scm_token_read(port));
 
         type = scm_token_get_type(t);
         o = scm_token_get_obj(t);
@@ -113,8 +111,7 @@ TEST(token, identifier) {
     scm_token *t;
     scm_object *o;
     for (i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
-        REQUIRE(t, "scm_token_read");
+        REQUIRE_NOEXC(t = scm_token_read(port));
         o = scm_token_get_obj(t);
 
         REQUIRE_EQ(scm_token_get_type(t), scm_token_type_identifier);
@@ -140,8 +137,7 @@ TEST(token, string) {
 
     scm_token *t;
     scm_object *o;
-    REQUIRE_NOEXCEPTION(t = scm_token_read(port));
-    REQUIRE(t, "scm_token_read");
+    REQUIRE_NOEXC(t = scm_token_read(port));
     o = scm_token_get_obj(t);
 
     REQUIRE_EQ(scm_token_get_type(t), scm_token_type_string);
@@ -170,8 +166,7 @@ TEST(token, integer) {
     scm_object *o;
     char *str;
     for (i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
-        REQUIRE(t, "scm_token_read");
+        REQUIRE_NOEXC(t = scm_token_read(port));
         o = scm_token_get_obj(t);
 
         REQUIRE_EQ(scm_token_get_type(t), scm_token_type_number);
@@ -202,8 +197,7 @@ TEST(token, float) {
     scm_object *o;
     char *str;
     for (i = 0; i < n; ++i) {
-        REQUIRE_NOEXCEPTION(t = scm_token_read(port));
-        REQUIRE(t, "scm_token_read");
+        REQUIRE_NOEXC(t = scm_token_read(port));
         o = scm_token_get_obj(t);
 
         REQUIRE_EQ(scm_token_get_type(t), scm_token_type_number);
@@ -233,7 +227,7 @@ TEST(token, bad_char) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
         snprintf(buf, sizeof(buf), "lexer: bad character constant `%s`", inputs[i]);
-        REQUIRE_EXCEPTION(buf, scm_token_read(port));
+        REQUIRE_EXC(buf, scm_token_read(port));
         scm_object_free(port);
     }
 }
@@ -252,7 +246,7 @@ TEST(token, bad_identifier) {
     for (i = 0; i < n; ++i) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
-        REQUIRE_EXCEPTION("lexer: bad identifier", scm_token_read(port));
+        REQUIRE_EXC("lexer: bad identifier", scm_token_read(port));
         scm_object_free(port);
     }
 }
@@ -268,7 +262,7 @@ TEST(token, bad_string) {
     for (i = 0; i < n; ++i) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
-        REQUIRE_EXCEPTION("lexer: bad string", scm_token_read(port));
+        REQUIRE_EXC("lexer: bad string", scm_token_read(port));
         scm_object_free(port);
     }
 }
@@ -290,7 +284,7 @@ TEST(token, bad_number) {
     for (i = 0; i < n; ++i) {
         scm_object *port = string_input_port_new(inputs[i], -1);
         REQUIRE(port, "string_input_port_new");
-        REQUIRE_EXCEPTION("lexer: bad number", scm_token_read(port));
+        REQUIRE_EXC("lexer: bad number", scm_token_read(port));
         scm_object_free(port);
     }
 }
