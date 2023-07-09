@@ -11,7 +11,7 @@ scm_object *scm_vector_ref(scm_object *vector, int k);
 int scm_vector_set(scm_object *vector, int k, scm_object *obj);
 int scm_vector_length(scm_object *vector);
 scm_object *scm_vector_insert(scm_object *vector, scm_object *obj);
-int scm_vector_env_init(void);
+int scm_vector_init(void);
 
 #endif /* SCHEME_VECTOR_H */
 

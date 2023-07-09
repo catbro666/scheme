@@ -1,19 +1,10 @@
-#include "../src/port.h"
-#include <tau/tau.h>
+#include "test.h"
 
 TAU_MAIN()
 
-void init() {
-    int res;
-    res = scm_object_env_init();
-    REQUIRE(!res, "scm_object_env_init");
-    res = scm_port_env_init();
-    REQUIRE(!res, "scm_port_env_init");
-}
-
 TEST(port, string_input_port) {
     int res;
-    init();
+    TEST_INIT();
 
     char *buf = "a 0";
     scm_object *port = string_input_port_new(buf, 3);
@@ -75,7 +66,7 @@ TEST(port, string_input_port) {
 }
 
 TEST(port, string_output_port) {
-    init();
+    TEST_INIT();
 
     char buf[32];
 
@@ -90,4 +81,26 @@ TEST(port, string_output_port) {
     REQUIRE_STREQ(buf, "ab");
 
     scm_object_free(port);
+}
+
+TEST(port, equivalence) {
+    TEST_INIT();
+
+    char buf[32];
+
+    scm_object *ports[] = {
+        string_input_port_new(buf, 32),
+        string_input_port_new(buf, 32),
+        string_output_port_new(buf, 32),
+        string_output_port_new(buf, 32),
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        for (int j = i; j < 4; ++j) {
+            CHECK_EQ(scm_object_eq(ports[i], ports[j]), i == j);
+            CHECK_EQ(scm_object_eqv(ports[i], ports[j]), i == j);
+            CHECK_EQ(scm_object_equal(ports[i], ports[j]), i == j);
+        }
+        scm_object_free(ports[i]);
+    }
 }

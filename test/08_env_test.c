@@ -1,44 +1,11 @@
-#include "../src/object.h"
-#include "../src/char.h"
-#include "../src/number.h"
-#include "../src/string.h"
-#include "../src/symbol.h"
-#include "../src/port.h"
-#include "../src/token.h"
-#include "../src/pair.h"
-#include "../src/vector.h"
-#include "../src/read.h"
-#include "../src/env.h"
-#include <tau/tau.h>
+#include "test.h"
 
 TAU_MAIN()
-
-void init() {
-    int res;
-    res = scm_object_env_init();
-    REQUIRE(!res, "scm_object_env_init");
-    res = scm_char_env_init();
-    REQUIRE(!res, "scm_char_env_init");
-    res = scm_port_env_init();
-    REQUIRE(!res, "scm_port_env_init");
-    res = scm_string_env_init();
-    REQUIRE(!res, "scm_string_env_init");
-    res = scm_symbol_env_init();
-    REQUIRE(!res, "scm_symbol_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_token_env_init();
-    REQUIRE(!res, "scm_token_env_init");
-    res = scm_pair_env_init();
-    REQUIRE(!res, "scm_pair_env_init");
-    res = scm_vector_env_init();
-    REQUIRE(!res, "scm_vector_env_init");
-}
 
 TEST(env, normal) {
     scm_object *o = NULL;
     int ret;
-    init();
+    TEST_INIT();
 
     scm_object *env = scm_env_new();
     REQUIRE_EQ(env, scm_null);
@@ -199,7 +166,7 @@ TEST(env, normal) {
 /* arguments mismatch, improper list */
 TEST(env, arguments_mismatch_and_improper_list) {
     scm_object *o = NULL;
-    init();
+    TEST_INIT();
 
     scm_object *env = scm_env_new();
     REQUIRE_EQ(env, scm_null);

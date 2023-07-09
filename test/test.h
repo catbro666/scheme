@@ -16,6 +16,7 @@
 #include "../src/env.h"
 
 #include <tau/tau.h>
+#include <limits.h>
 
 /* @msg: the expected error msg
  * @exp: the expression that is expected to throw exception */
@@ -89,6 +90,29 @@
         } SCM_END_TRY; \
  \
         CHECK(!err, "no exception throwed"); \
+    } while (0)
+
+#define TEST_INIT() \
+    do { \
+        int res; \
+        res = scm_object_init(); \
+        REQUIRE(!res, "scm_object_init"); \
+        res = scm_char_init(); \
+        REQUIRE(!res, "scm_char_init"); \
+        res = scm_port_init(); \
+        REQUIRE(!res, "scm_port_init"); \
+        res = scm_string_init(); \
+        REQUIRE(!res, "scm_string_init"); \
+        res = scm_symbol_init(); \
+        REQUIRE(!res, "scm_symbol_init"); \
+        res = scm_number_init(); \
+        REQUIRE(!res, "scm_number_init"); \
+        res = scm_token_init(); \
+        REQUIRE(!res, "scm_token_init"); \
+        res = scm_pair_init(); \
+        REQUIRE(!res, "scm_pair_init"); \
+        res = scm_vector_init(); \
+        REQUIRE(!res, "scm_vector_init"); \
     } while (0)
 
 #endif /* SCHEME_TEST_H */

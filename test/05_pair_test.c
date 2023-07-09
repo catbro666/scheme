@@ -1,23 +1,10 @@
-#include "../src/char.h"
-#include "../src/number.h"
-#include "../src/pair.h"
-#include <tau/tau.h>
+#include "test.h"
 
 TAU_MAIN()
 
-void init() {
-    int res;
-    res = scm_char_env_init();
-    REQUIRE(!res, "scm_char_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_pair_env_init();
-    REQUIRE(!res, "scm_pair_env_init");
-}
-
 TEST(pair, cons_car_cdr) {
     char *str;
-    init();
+    TEST_INIT();
 
     scm_object *pair = scm_cons(scm_chars['a'], scm_number_new_integer("1", 10));
     REQUIRE(pair, "scm_cons");
@@ -40,7 +27,7 @@ TEST(pair, cons_car_cdr) {
 
 TEST(pair, set_car_cdr) {
     char *str;
-    init();
+    TEST_INIT();
 
     scm_object *pair = scm_cons(scm_chars['a'], scm_number_new_integer("1", 10));
     REQUIRE(pair, "scm_cons");
@@ -64,7 +51,7 @@ TEST(pair, set_car_cdr) {
 }
 
 TEST(pair, list) {
-    init();
+    TEST_INIT();
 
     scm_object *list = scm_list(2, scm_chars['a'], scm_chars['b']);
     REQUIRE(list, "scm_list");
@@ -108,7 +95,7 @@ TEST(pair, list) {
 
 TEST(pair, list_ref) {
     scm_object *e;
-    init();
+    TEST_INIT();
 
     scm_object *list = scm_list(2, scm_chars['a'], scm_chars['b']);
     REQUIRE(list, "scm_list");
@@ -128,4 +115,30 @@ TEST(pair, list_ref) {
     REQUIRE(!e, "invalid index");
 
     scm_object_free(list);
+}
+
+TEST(pair, equivalence) {
+    TEST_INIT();
+    scm_object *pairs[] = {
+        scm_null,
+        scm_null,
+        scm_cons(scm_true, scm_null),
+        scm_cons(scm_true, scm_null),
+        scm_cons(scm_false, scm_null),
+        scm_cons(scm_false, scm_null),
+        scm_cons(scm_true, scm_false),
+        scm_cons(scm_true, scm_false),
+        scm_list(2, scm_true, scm_false),
+        scm_list(2, scm_true, scm_false),
+    };
+
+    int n = sizeof(pairs) / sizeof(scm_object *);
+    for (int i = 0; i < n; ++i) {
+        for (int j = i; j < n; ++j) {
+            CHECK_EQ(scm_object_eq(pairs[i], pairs[j]), i == j || (i == 0 && j == 1));
+            CHECK_EQ(scm_object_eqv(pairs[i], pairs[j]), i == j || (i == 0 && j == 1));
+            CHECK_EQ(scm_object_equal(pairs[i], pairs[j]), i/2 == j/2);
+        }
+        scm_object_free(pairs[i]);
+    }
 }

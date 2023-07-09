@@ -31,7 +31,7 @@ static const char chars[] = {
     '9', 'a', 'b', 'c', 'd', 'e', 'f',
 };
 
-static void scm_number_free(scm_object *obj) {
+static void number_free(scm_object *obj) {
     free(obj);
 }
 
@@ -194,13 +194,24 @@ char *scm_number_to_string(scm_object *obj, int radix) {
     return buf;
 }
 
+static int integer_eqv(scm_object *o1, scm_object *o2) {
+    return ((scm_integer *)o1)->val == ((scm_integer *)o2)->val;
+}
+
+static int float_eqv(scm_object *o1, scm_object *o2) {
+    return ((scm_float *)o1)->val == ((scm_float *)o2)->val;
+}
+
+static scm_object_methods integer_methods = { number_free, integer_eqv, integer_eqv };
+static scm_object_methods float_methods = { number_free, float_eqv, float_eqv };
+
 static int initialized = 0;
 
-int scm_number_env_init(void) {
+int scm_number_init(void) {
     if (initialized) return 0;
 
-    scm_object_register(scm_type_integer, scm_number_free);
-    scm_object_register(scm_type_float, scm_number_free);
+    scm_object_register(scm_type_integer, &integer_methods);
+    scm_object_register(scm_type_float, &float_methods);
 
     initialized = 1;
     return 0;

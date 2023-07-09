@@ -1,23 +1,10 @@
-#include "../src/char.h"
-#include "../src/number.h"
-#include "../src/vector.h"
-#include <tau/tau.h>
+#include "test.h"
 
 TAU_MAIN()
 
-void init() {
-    int res;
-    res = scm_char_env_init();
-    REQUIRE(!res, "scm_char_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_vector_env_init();
-    REQUIRE(!res, "scm_vector_env_init");
-}
-
 TEST(vector, new_ref) {
     scm_object *o = NULL;
-    init();
+    TEST_INIT();
 
     scm_object *v0 = scm_vector_new(0);
     REQUIRE(v0, "scm_vector_new 0 elements");
@@ -43,7 +30,7 @@ TEST(vector, new_ref) {
 
 TEST(vector, fill) {
     scm_object *o;
-    init();
+    TEST_INIT();
 
     scm_object *v1 = scm_vector_new(2, scm_chars['a'], scm_chars['b']);
     REQUIRE(v1, "scm_vector_new");
@@ -78,7 +65,7 @@ TEST(vector, fill) {
 
 TEST(vector, set) {
     scm_object *o;
-    init();
+    TEST_INIT();
 
     scm_object *v1 = scm_vector_new(2, scm_chars['a'], scm_chars['b']);
     REQUIRE(v1, "scm_vector_new");
@@ -103,7 +90,7 @@ TEST(vector, set) {
 
 TEST(vector, insert) {
     scm_object *o;
-    init();
+    TEST_INIT();
 
     /* empty vector */
     scm_object *v0 = scm_vector_new(0);
@@ -139,4 +126,30 @@ TEST(vector, insert) {
 
     scm_object_free(v0);
     scm_object_free(v1);
+}
+
+TEST(vector, equivalence) {
+    TEST_INIT();
+    scm_object *vecs[] = {
+        scm_empty_vector,
+        scm_empty_vector,
+        scm_vector_new(1, scm_true),
+        scm_vector_new(1, scm_true),
+        scm_vector_new(1, scm_false),
+        scm_vector_new(1, scm_false),
+        scm_vector_new(2, scm_true, scm_false),
+        scm_vector_new(2, scm_true, scm_false),
+        scm_vector_new(1, scm_vector_new(1, scm_true)),
+        scm_vector_new(1, scm_vector_new(1, scm_true)),
+    };
+
+    int n = sizeof(vecs) / sizeof(scm_object *);
+    for (int i = 0; i < n; ++i) {
+        for (int j = i; j < n; ++j) {
+            CHECK_EQ(scm_object_eq(vecs[i], vecs[j]), i == j || (i == 0 && j == 1));
+            CHECK_EQ(scm_object_eqv(vecs[i], vecs[j]), i == j || (i == 0 && j == 1));
+            CHECK_EQ(scm_object_equal(vecs[i], vecs[j]), i/2 == j/2);
+        }
+        scm_object_free(vecs[i]);
+    }
 }

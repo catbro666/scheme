@@ -1,20 +1,12 @@
-#include "../src/number.h"
-#include <tau/tau.h>
-#include <limits.h>
+#include "test.h"
 
 TAU_MAIN()
-
-void init() {
-    int res;
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-}
 
 TEST(number, positive_integers) {
     int i;
     scm_object *obj;
     char *str = NULL;
-    init();
+    TEST_INIT();
 
     const int n = 4;
     char *strs[n] = {"998", "ffe", "110", "776"};
@@ -37,7 +29,7 @@ TEST(number, zero_negative_integers) {
     int i;
     scm_object *obj;
     char *str = NULL;
-    init();
+    TEST_INIT();
 
     const int n = 8;
     char *strs[n] = {"-998", "-ffe", "-110", "-776", "0", "0", "0", "0"};
@@ -60,7 +52,7 @@ TEST(number, integer_max_min) {
     int i, j;
     scm_object *obj, *obj2;
     char *str = NULL, *str2 = NULL;
-    init();
+    TEST_INIT();
 
     char max[256], min[256];
     snprintf(max, 256, "%ld", LONG_MAX);
@@ -97,7 +89,7 @@ TEST(number, integer_max_min) {
 TEST(number, integer_out_of_range) {
     int i;
     scm_object *obj;
-    init();
+    TEST_INIT();
 
     const int n = 2;
     char *strs[n] = {"9223372036854775808", "-9223372036854775809"};
@@ -112,7 +104,7 @@ TEST(number, floats) {
     int i;
     scm_object *obj;
     char *str = NULL;
-    init();
+    TEST_INIT();
 
     const int n = 5;
     char *strs[n] = {"100.0", "2e-3", "-0.000003", "-0.4e6", "666"};
@@ -134,7 +126,7 @@ TEST(number, floats) {
 TEST(number, floats_out_of_range) {
     int i;
     scm_object *obj;
-    init();
+    TEST_INIT();
 
     const int n = 2;
     char *strs[n] = {"1e1000", "1e-1000"};
@@ -148,7 +140,7 @@ TEST(number, integer_from_float) {
     int i;
     scm_object *obj;
     char *str = NULL;
-    init();
+    TEST_INIT();
 
     const int n = 5;
     char *strs[n] = {"100.0", "2e-3", "-0.999", "-0.4e6", "666"};
@@ -171,7 +163,7 @@ TEST(number, float_from_integer) {
     int i;
     scm_object *obj;
     char *str = NULL;
-    init();
+    TEST_INIT();
 
     const int n = 4;
     char *strs[n] = {"10", "10", "-10", "-10"};
@@ -191,4 +183,27 @@ TEST(number, float_from_integer) {
     }
 }
 
+TEST(number, equivalence) {
+    TEST_INIT();
+    scm_object *nums[] = {
+        scm_number_new_integer("1", 10),
+        scm_number_new_integer("1", 10),
+        scm_number_new_integer("2", 10),
+        scm_number_new_integer("2", 10),
+        scm_number_new_float("1"),
+        scm_number_new_float("1"),
+        scm_number_new_float("2"),
+        scm_number_new_float("2"),
+    };
 
+    int n = sizeof(nums) / sizeof(scm_object *);
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = i; j < n; ++j) {
+            CHECK_EQ(scm_object_eq(nums[i], nums[j]), i/2 == j/2);
+            CHECK_EQ(scm_object_eqv(nums[i], nums[j]), i/2 == j/2);
+            CHECK_EQ(scm_object_equal(nums[i], nums[j]), i/2 == j/2);
+        }
+        scm_object_free(nums[i]);
+    }
+}

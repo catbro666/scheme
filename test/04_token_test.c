@@ -2,29 +2,9 @@
 
 TAU_MAIN()
 
-static void init() {
-    int res;
-    res = scm_object_env_init();
-    REQUIRE(!res, "scm_object_env_init");
-    res = scm_char_env_init();
-    REQUIRE(!res, "scm_char_env_init");
-    res = scm_port_env_init();
-    REQUIRE(!res, "scm_port_env_init");
-    res = scm_string_env_init();
-    REQUIRE(!res, "scm_string_env_init");
-    res = scm_symbol_env_init();
-    REQUIRE(!res, "scm_symbol_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_token_env_init();
-    REQUIRE(!res, "scm_token_env_init");
-    res = scm_token_env_init();
-    REQUIRE(!res, "call scm_token_env_init the second time");
-}
-
 TEST(token, simple) {
     int i;
-    init();
+    TEST_INIT();
     scm_object *port = string_input_port_new("\'`()#(,,@#t#f. ", -1);
     REQUIRE(port, "string_input_port_new");
 
@@ -45,7 +25,7 @@ TEST(token, simple) {
 
 TEST(token, simple_with_data) {
     int i;
-    init();
+    TEST_INIT();
     scm_object *port = string_input_port_new("#t#f.)", -1);
     REQUIRE(port, "string_input_port_new");
 
@@ -68,7 +48,7 @@ TEST(token, simple_with_data) {
 
 TEST(token, char) {
     int i;
-    init();
+    TEST_INIT();
     scm_object *port = string_input_port_new("#\\a #\\A #\\\\ #\\  #\\( #\\) #\\# #\\' #\\` "
                                              "#\\, #\\@ #\\. #\\s #\\n #\\space #\\newline ", -1);
     REQUIRE(port, "string_input_port_new");
@@ -99,7 +79,7 @@ TEST(token, char) {
 
 TEST(token, identifier) {
     int i;
-    init();
+    TEST_INIT();
     scm_object *port = string_input_port_new("ab1 !+-.@ + - ...", -1);
     REQUIRE(port, "string_input_port_new");
 
@@ -125,7 +105,7 @@ TEST(token, identifier) {
 
 TEST(token, string) {
     int i;
-    init();
+    TEST_INIT();
     scm_object *port = string_input_port_new("\"a1 (\\\"\\\\\"", -1);
     REQUIRE(port, "string_input_port_new");
 
@@ -153,7 +133,7 @@ TEST(token, string) {
 
 TEST(token, integer) {
     int i;
-    init();
+    TEST_INIT();
     scm_object *port = string_input_port_new("12 +1 -3 #b10 #o10 #d10 #x10 #e5.1 #e1e2", -1);
     REQUIRE(port, "string_input_port_new");
 
@@ -184,7 +164,7 @@ TEST(token, integer) {
 
 TEST(token, float) {
     int i;
-    init();
+    TEST_INIT();
     scm_object *port = string_input_port_new("1.2 .5 -.9 1## 0.3# 2e2 +1e-1 1.2E+2 #i5 #i#xa #i#o-10", -1);
     REQUIRE(port, "string_input_port_new");
 
@@ -216,7 +196,7 @@ TEST(token, float) {
 /* bad syntax */
 TEST(token, bad_char) {
     int i;
-    init();
+    TEST_INIT();
     char buf[1024];
     char *inputs[] = {
         "#\\", "#\\aa", "#\\spac", "#\\space2", "#\\newlin", "#\\newline2",
@@ -234,7 +214,7 @@ TEST(token, bad_char) {
 
 TEST(token, bad_identifier) {
     int i;
-    init();
+    TEST_INIT();
     char *inputs[] = {
         /* the first character isn't in <initial>
          * or the subsequent characters aren't in <subsequent> */
@@ -253,7 +233,7 @@ TEST(token, bad_identifier) {
 
 TEST(token, bad_string) {
     int i;
-    init();
+    TEST_INIT();
     char *inputs[] = {
         "\"ab", "\"a\\a\"",
     };
@@ -269,7 +249,7 @@ TEST(token, bad_string) {
 
 TEST(token, bad_number) {
     int i;
-    init();
+    TEST_INIT();
     char *inputs[] = {
         "#10", "#c12", "#e#i1", "#x#d1", "1#o",    /* prefix */
         "#e", "#d.", "#x12g", "1a", "#o9", "#b3", "+a", "-a", /* no digit, bad digit */

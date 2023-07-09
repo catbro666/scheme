@@ -2,31 +2,9 @@
 
 TAU_MAIN()
 
-void init() {
-    int res;
-    res = scm_object_env_init();
-    REQUIRE(!res, "scm_object_env_init");
-    res = scm_char_env_init();
-    REQUIRE(!res, "scm_char_env_init");
-    res = scm_port_env_init();
-    REQUIRE(!res, "scm_port_env_init");
-    res = scm_string_env_init();
-    REQUIRE(!res, "scm_string_env_init");
-    res = scm_symbol_env_init();
-    REQUIRE(!res, "scm_symbol_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_token_env_init();
-    REQUIRE(!res, "scm_token_env_init");
-    res = scm_pair_env_init();
-    REQUIRE(!res, "scm_pair_env_init");
-    res = scm_vector_env_init();
-    REQUIRE(!res, "scm_vector_env_init");
-}
-
 TEST(write, simple_datum) {
     char buf[1024] = {0};
-    init();
+    TEST_INIT();
 
     scm_object *oport = string_output_port_new(buf, 1024);
     REQUIRE(oport, "string_output_port_new");
@@ -56,7 +34,7 @@ TEST(write, simple_datum) {
 
 TEST(write, char) {
     char buf[1024] = {0};
-    init();
+    TEST_INIT();
 
     char expected[4];
     scm_object *oport = string_output_port_new(buf, 1024);
@@ -87,7 +65,7 @@ TEST(write, char) {
 
 TEST(write, number) {
     char buf[1024] = {0};
-    init();
+    TEST_INIT();
 
     scm_object *oport = string_output_port_new(buf, 1024);
     REQUIRE(oport, "string_output_port_new");
@@ -118,7 +96,7 @@ TEST(write, number) {
 
 TEST(write, string) {
     char buf[1024] = {0};
-    init();
+    TEST_INIT();
 
     scm_object *oport = string_output_port_new(buf, 1024);
     REQUIRE(oport, "string_output_port_new");
@@ -136,7 +114,7 @@ TEST(write, string) {
 
 TEST(write, symbol) {
     char buf[1024] = {0};
-    init();
+    TEST_INIT();
 
     scm_object *oport = string_output_port_new(buf, 1024);
     REQUIRE(oport, "string_output_port_new");
@@ -153,7 +131,7 @@ TEST(write, symbol) {
 
 TEST(write, pair) {
     char buf[1024] = {0};
-    init();
+    TEST_INIT();
 
     scm_object *oport = string_output_port_new(buf, 1024);
     REQUIRE(oport, "string_output_port_new");
@@ -183,7 +161,7 @@ TEST(write, pair) {
 
 TEST(write, vector) {
     char buf[1024] = {0};
-    init();
+    TEST_INIT();
 
     scm_object *oport = string_output_port_new(buf, 1024);
     REQUIRE(oport, "string_output_port_new");

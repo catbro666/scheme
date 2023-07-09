@@ -43,7 +43,7 @@ scm_object *scm_cddadr(scm_object *pair);
 scm_object *scm_cdddar(scm_object *pair);
 scm_object *scm_cddddr(scm_object *pair);
 
-int scm_pair_env_init(void);
+int scm_pair_init(void);
 
 #endif /* SCHEME_PAIR_H */
 

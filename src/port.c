@@ -13,7 +13,6 @@ struct scm_input_port_st {
 typedef int (*readc_fn)(scm_input_port *);
 typedef int (*peekc_fn)(scm_input_port *);
 typedef int (*unreadc_fn)(scm_input_port *, int c);
-typedef void (*iport_free_fn)(scm_input_port *);
 
 #define PORT_CACHE_SIZE 4
 
@@ -26,7 +25,8 @@ static struct iport_callbacks_st {
     readc_fn readc;
     peekc_fn peekc;
     unreadc_fn unreadc;
-    iport_free_fn free;
+    scm_object_free_fn free;
+    scm_object_eq_fn eqv;
 } iport_callbacks[iport_type_max];
 
 /* output port */
@@ -36,7 +36,6 @@ struct scm_output_port_st {
 };
 
 typedef int (*writec_fn)(scm_output_port *, char);
-typedef void (*oport_free_fn)(scm_output_port *);
 
 enum {
     oport_type_string = 0,
@@ -45,7 +44,8 @@ enum {
 
 static struct oport_callbacks_st {
     writec_fn writec;
-    oport_free_fn free;
+    scm_object_free_fn free;
+    scm_object_eq_fn eqv;
 } oport_callbacks[oport_type_max];
 
 /* specific types of input/output port */
@@ -93,9 +93,13 @@ static int string_input_port_peekc(scm_input_port *port) {
     return c;
 }
 
-static void string_input_port_free(scm_input_port *port) {
+static void string_input_port_free(scm_object *port) {
     free(port);
     return;
+}
+
+static int string_input_port_eqv(scm_object *o1, scm_object *o2) {
+    return o1 == o2;
 }
 
 static void string_input_port_register() {
@@ -103,6 +107,7 @@ static void string_input_port_register() {
     iport_callbacks[iport_type_string].peekc = string_input_port_peekc;
     iport_callbacks[iport_type_string].unreadc = string_input_port_unreadc;
     iport_callbacks[iport_type_string].free = string_input_port_free;
+    iport_callbacks[iport_type_string].eqv = string_input_port_eqv;
     return;
 }
 
@@ -125,14 +130,19 @@ static int string_output_port_writec(scm_output_port *port, char c) {
     return 1;
 }
 
-static void string_output_port_free(scm_output_port *port) {
+static void string_output_port_free(scm_object *port) {
     free(port);
     return;
+}
+
+static int string_output_port_eqv(scm_object *o1, scm_object *o2) {
+    return o1 == o2;
 }
 
 static void string_output_port_register() {
     oport_callbacks[oport_type_string].writec = string_output_port_writec;
     oport_callbacks[oport_type_string].free = string_output_port_free;
+    oport_callbacks[oport_type_string].eqv = string_output_port_eqv;
     return;
 }
 
@@ -192,10 +202,18 @@ int scm_input_port_unreadc(scm_object *obj, int c) {
     return iport_callbacks[port->type].unreadc(port, c);
 }
 
-static void scm_input_port_free(scm_object *obj) {
+static void iport_free(scm_object *obj) {
     scm_input_port *port = (scm_input_port *)obj;
-    iport_callbacks[port->type].free(port);
+    iport_callbacks[port->type].free(obj);
     return;
+}
+
+static int iport_eqv(scm_object *o1, scm_object *o2) {
+    scm_input_port *p1 = (scm_input_port *)o1;
+    scm_input_port *p2 = (scm_input_port *)o2;
+    if (p1->type != p2->type)
+        return 0;
+    return iport_callbacks[p1->type].eqv(o1, o2);
 }
 
 scm_object *string_output_port_new(char *buf, int size) {
@@ -227,22 +245,33 @@ int scm_output_port_writec(scm_object *obj, char c) {
     return oport_callbacks[port->type].writec(port, c);
 }
 
-static void scm_output_port_free(scm_object *obj) {
+static void oport_free(scm_object *obj) {
     scm_output_port *port = (scm_output_port *)obj;
-    oport_callbacks[port->type].free(port);
+    oport_callbacks[port->type].free(obj);
     return;
 }
 
+static int oport_eqv(scm_object *o1, scm_object *o2) {
+    scm_output_port *p1 = (scm_output_port *)o1;
+    scm_output_port *p2 = (scm_output_port *)o2;
+    if (p1->type != p2->type)
+        return 0;
+    return oport_callbacks[p1->type].eqv(o1, o2);
+}
+
+static scm_object_methods input_methods = { iport_free, iport_eqv, iport_eqv };
+static scm_object_methods output_methods = { oport_free, oport_eqv, oport_eqv };
+
 static int initialized = 0;
 
-int scm_port_env_init(void) {
+int scm_port_init(void) {
     if (initialized) return 0;
 
     string_input_port_register();
     string_output_port_register();
 
-    scm_object_register(scm_type_input_port, scm_input_port_free);
-    scm_object_register(scm_type_output_port, scm_output_port_free);
+    scm_object_register(scm_type_input_port, &input_methods);
+    scm_object_register(scm_type_output_port, &output_methods);
 
     initialized = 1;
     return 0;

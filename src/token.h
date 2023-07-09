@@ -49,7 +49,7 @@ short scm_token_get_type(scm_token *tok);
 scm_object *scm_token_get_obj(scm_token *tok);
 void scm_token_free(scm_token *tok);
 
-int scm_token_env_init(void);
+int scm_token_init(void);
 
 #endif /* SCHEME_TOKEN_H */
 

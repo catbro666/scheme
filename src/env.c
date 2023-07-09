@@ -87,7 +87,7 @@ static scm_object *frame_scan(scm_object *frame, scm_object *var) {
     scm_object *binding = NULL;
     while (!frame_is_empty(frame)) {
         binding = frame_first_binding(frame);
-        if (scm_symbol_equal(binding_get_var(binding), var)) {
+        if (scm_object_eq(binding_get_var(binding), var)) {
             return binding;
         }
         frame = frame_rest_bindings(frame);

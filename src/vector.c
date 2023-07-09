@@ -73,7 +73,7 @@ scm_object *scm_vector_new_fill(int count, scm_object *fill) {
     return vec;
 }
 
-static void scm_vector_free(scm_object *vector) {
+static void vector_free(scm_object *vector) {
     scm_vector *vec = (scm_vector *)vector;
     int i = vec->len;
 
@@ -108,9 +108,6 @@ int scm_vector_set(scm_object *vector, int k, scm_object *obj) {
 }
 
 int scm_vector_length(scm_object *vector) {
-    if (vector == scm_empty_vector)
-        return 0;
-
     scm_vector *vec = (scm_vector *)vector;
     return vec->len;
 }
@@ -128,14 +125,34 @@ scm_object *scm_vector_insert(scm_object *vector, scm_object *obj) {
     return vec;
 }
 
+static int vector_eqv(scm_object *o1, scm_object *o2) {
+    return o1 == o2;
+}
+
+static int vector_equal(scm_object *o1, scm_object *o2) {
+    if (vector_eqv(o1, o2))
+        return 1;
+    scm_vector *v1 = (scm_vector *)o1;
+    scm_vector *v2 = (scm_vector *)o2;
+    if (v1->len != v2->len)
+        return 0;
+    for (int i = 0; i < v1->len; ++i) {
+        if (!scm_object_equal(scm_vector_ref(o1, i), scm_vector_ref(o2, i)))
+            return 0;
+    }
+    return 1;
+}
+
+static scm_object_methods vector_methods = { vector_free, vector_eqv, vector_equal };
+
 static int initialized = 0;
 
-int scm_vector_env_init(void) {
+int scm_vector_init(void) {
     if (initialized) return 0;
 
     scm_empty_vector = (scm_object *)scm_vector_alloc(0);
 
-    scm_object_register(scm_type_vector, scm_vector_free);
+    scm_object_register(scm_type_vector, &vector_methods);
 
     initialized = 1;
     return 0;

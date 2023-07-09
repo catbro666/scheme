@@ -26,7 +26,7 @@ scm_object *scm_symbol_new(const char *buf, int len) {
     return (scm_object *)sym;
 }
 
-static void scm_symbol_free(scm_object *obj) {
+static void symbol_free(scm_object *obj) {
     /* no need to free symbols after we implement hash table */
     (void)obj;
     return;
@@ -37,17 +37,21 @@ char *scm_symbol_get_string(scm_object *obj) {
     return s->buf;
 }
 
-int scm_symbol_equal(scm_object *obj1, scm_object *obj2) {
-    scm_symbol *s1 = (scm_symbol *)obj1;
-    scm_symbol *s2 = (scm_symbol *)obj2;
-    return s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len);
+/* comparing pointer only is enough after we use hash table */
+static int symbol_eqv(scm_object *o1, scm_object *o2) {
+    scm_symbol *s1 = (scm_symbol *)o1;
+    scm_symbol *s2 = (scm_symbol *)o2;
+    return o1 == o2
+        || (s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len));
 }
 
+static scm_object_methods symbol_methods = { symbol_free, symbol_eqv, symbol_eqv };
+
 static int initialized = 0;
-int scm_symbol_env_init(void) {
+int scm_symbol_init(void) {
     if (initialized) return 0;
 
-    scm_object_register(scm_type_identifier, scm_symbol_free);
+    scm_object_register(scm_type_identifier, &symbol_methods);
 
     initialized = 1;
     return 0;

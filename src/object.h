@@ -34,13 +34,24 @@ extern scm_object *scm_dot;
 extern scm_object *scm_rparen;
 
 /* free function of the specific type */
-typedef void (*scm_object_data_free_fn)(scm_object *data);
+typedef void (*scm_object_free_fn)(scm_object *obj);
+typedef int (*scm_object_eq_fn)(scm_object *o1, scm_object *o2);
+typedef struct scm_object_methods_st {
+    scm_object_free_fn free;
+    scm_object_eq_fn eqv;
+    scm_object_eq_fn equal;
+} scm_object_methods;
+
+extern scm_object_methods simple_methods;
 
 void scm_object_free(scm_object *obj);
+int scm_object_eq(scm_object *o1, scm_object *o2);
+int scm_object_eqv(scm_object *o1, scm_object *o2);
+int scm_object_equal(scm_object *o1, scm_object *o2);
 
-void scm_object_register(scm_type, scm_object_data_free_fn fn);
+void scm_object_register(scm_type, scm_object_methods *methods);
 
-int scm_object_env_init(void);
+int scm_object_init(void);
 
 
 #endif /* SCHEME_OBJECT_H */

@@ -7,19 +7,20 @@
 #include "token.h"
 #include "pair.h"
 #include "vector.h"
+
 #include <stdio.h>
 
 int main()
 {
-    scm_object_env_init();
-    scm_char_env_init();
-    scm_port_env_init();
-    scm_string_env_init();
-    scm_symbol_env_init();
-    scm_number_env_init();
-    scm_token_env_init();
-    scm_pair_env_init();
-    scm_vector_env_init();
+    scm_object_init();
+    scm_char_init();
+    scm_port_init();
+    scm_string_init();
+    scm_symbol_init();
+    scm_number_init();
+    scm_token_init();
+    scm_pair_init();
+    scm_vector_init();
 
     printf("Hello world\n");
     return 0;

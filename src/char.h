@@ -6,7 +6,7 @@ extern scm_object *scm_chars[];
 
 char scm_char_get_char(scm_object *obj);
 
-int scm_char_env_init(void);
+int scm_char_init(void);
 
 #endif /* SCHEME_CHAR_H */
 

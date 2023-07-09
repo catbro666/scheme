@@ -2,31 +2,9 @@
 
 TAU_MAIN()
 
-void init() {
-    int res;
-    res = scm_object_env_init();
-    REQUIRE(!res, "scm_object_env_init");
-    res = scm_char_env_init();
-    REQUIRE(!res, "scm_char_env_init");
-    res = scm_port_env_init();
-    REQUIRE(!res, "scm_port_env_init");
-    res = scm_string_env_init();
-    REQUIRE(!res, "scm_string_env_init");
-    res = scm_symbol_env_init();
-    REQUIRE(!res, "scm_symbol_env_init");
-    res = scm_number_env_init();
-    REQUIRE(!res, "scm_number_env_init");
-    res = scm_token_env_init();
-    REQUIRE(!res, "scm_token_env_init");
-    res = scm_pair_env_init();
-    REQUIRE(!res, "scm_pair_env_init");
-    res = scm_vector_env_init();
-    REQUIRE(!res, "scm_vector_env_init");
-}
-
 TEST(read, simple_datum) {
     scm_object *o = NULL;
-    init();
+    TEST_INIT();
 
     scm_object *port = string_input_port_new("1 0.1 \"a\" a  #t #f #\\a", -1);
     REQUIRE(port, "string_input_port_new");
@@ -48,7 +26,7 @@ TEST(read, simple_datum) {
 
 TEST(read, list) {
     scm_object *l1, *l2, *l3, *l4, *o;
-    init();
+    TEST_INIT();
 
     scm_object *port = string_input_port_new("() (1) (1 . 2) ((1))", -1);
     REQUIRE(port, "string_input_port_new");
@@ -86,7 +64,7 @@ TEST(read, list) {
 
 TEST(read, vector) {
     scm_object *v1, *v2, *v3, *o;
-    init();
+    TEST_INIT();
 
     scm_object *port = string_input_port_new("#() #(1) #(#(1))", -1);
     REQUIRE(port, "string_input_port_new");
@@ -117,7 +95,7 @@ TEST(read, vector) {
 
 TEST(read, quote_quasiquote) {
     scm_object *quote, *o;
-    init();
+    TEST_INIT();
 
     scm_object *port = string_input_port_new("'1 '(1) '#(1) `1 `(1) `#(1)", -1);
     REQUIRE(port, "string_input_port_new");
@@ -150,7 +128,7 @@ TEST(read, quote_quasiquote) {
 
 TEST(read, unquote_unquote_splicing) {
     scm_object *unquote, *o;
-    init();
+    TEST_INIT();
 
     scm_object *port = string_input_port_new(",1 ,(1) ,#(1) ,@1 ,@(1) ,@#(1)", -1);
     REQUIRE(port, "string_input_port_new");
@@ -182,7 +160,7 @@ TEST(read, unquote_unquote_splicing) {
 }
 
 TEST(read, invalid_token) {
-    init();
+    TEST_INIT();
 
     scm_object *p1 = string_input_port_new(")", -1);
     REQUIRE(p1, "string_input_port_new");

@@ -15,7 +15,7 @@ scm_object *string_output_port_new(char *buf, int size);
 /* return number of bytes written */
 int scm_output_port_writec(scm_object *port, char c);
 
-int scm_port_env_init(void);
+int scm_port_init(void);
 
 #endif /* SCHEME_PORT_H */
 

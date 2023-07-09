@@ -27,7 +27,7 @@ scm_object *scm_cons(scm_object *car, scm_object *cdr) {
     return (scm_object *)pair;
 }
 
-static void scm_pair_free(scm_object *pair) {
+static void pair_free(scm_object *pair) {
     scm_pair *p = (scm_pair *)pair;
     scm_object_free(p->car);
     scm_object_free(p->cdr);
@@ -62,6 +62,20 @@ void scm_set_cdr(scm_object *pair, scm_object *o) {
     p->cdr = o;
 }
 
+static int pair_eqv(scm_object *o1, scm_object *o2) {
+    return o1 == o2;
+}
+
+static int pair_equal(scm_object *o1, scm_object *o2) {
+    if (pair_eqv(o1, o2))
+        return 1;
+    scm_object *a1 = scm_car(o1);
+    scm_object *a2 = scm_car(o2);
+    scm_object *d1 = scm_cdr(o1);
+    scm_object *d2 = scm_cdr(o2);
+    return scm_object_equal(a1, a2) && scm_object_equal(d1, d2);
+}
+
 /* create a list */
 scm_object *scm_list(int count, ...) {
     va_list objs;
@@ -92,7 +106,7 @@ scm_object *scm_list(int count, ...) {
     return head;
 err:
     if (head) {
-        scm_pair_free(head);
+        pair_free(head);
     }
     return NULL;
 }
@@ -243,12 +257,15 @@ scm_object *scm_cddddr(scm_object *pair) {
     return scm_cdr(scm_cdr(scm_cdr(scm_cdr(pair))));
 }
 
+static scm_object_methods pair_methods = { pair_free, pair_eqv, pair_equal };
+
 static int initialized = 0;
 
-int scm_pair_env_init(void) {
+int scm_pair_init(void) {
     if (initialized) return 0;
 
-    scm_object_register(scm_type_pair, scm_pair_free);
+    scm_object_register(scm_type_pair, &pair_methods);
+    scm_object_register(scm_type_null, &simple_methods);
 
     initialized = 1;
     return 0;

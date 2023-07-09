@@ -691,7 +691,7 @@ void scm_token_free(scm_token *tok) {
 
 static int initialized = 0;
 
-int scm_token_env_init(void) {
+int scm_token_init(void) {
     int i = 0;
 
     if (initialized)
