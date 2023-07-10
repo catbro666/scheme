@@ -20,7 +20,7 @@
 
 /* @msg: the expected error msg
  * @exp: the expression that is expected to throw exception */
-#define REQUIRE_EXC(msg, exp) \
+#define REQUIRE_EXC_ORIGIN(msg, exp, ...) \
     do { \
         char *err = NULL; \
         SCM_TRY { \
@@ -29,10 +29,12 @@
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
-        REQUIRE_SUBSTREQ(err, msg, strlen(msg)); \
+        REQUIRE_SUBSTREQ(err, msg, strlen(msg), __VA_ARGS__); \
     } while (0)
 
-#define REQUIRE_NOEXC(exp) \
+#define REQUIRE_EXC(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_EXC, __VA_ARGS__)
+
+#define REQUIRE_NOEXC_ORIGIN(exp, ...) \
     do { \
         char *err = NULL; \
         SCM_TRY { \
@@ -41,22 +43,41 @@
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
-        REQUIRE(!err, "no exception throwed"); \
+        REQUIRE(!err, __VA_ARGS__); \
     } while (0)
 
-#define REQUIRE_NOEXC_EQ(exp, val) \
+#define REQUIRE_NOEXC(...) FIXED1_CHOOSER(__VA_ARGS__)(REQUIRE_NOEXC, __VA_ARGS__)
+
+#define REQUIRE_NOEXC_EQ_ORIGIN(exp, val, ...) \
     do { \
         char *err = NULL; \
         SCM_TRY { \
-            REQUIRE_EQ(exp, val); \
+            REQUIRE_EQ(exp, val, __VA_ARGS__); \
         } SCM_CATCH { \
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
-        REQUIRE(!err, "no exception throwed"); \
+        REQUIRE(!err, __VA_ARGS__); \
     } while (0)
 
-#define CHECK_EXC(msg, exp) \
+#define REQUIRE_NOEXC_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_NOEXC_EQ, __VA_ARGS__)
+
+#define REQUIRE_OBJ_EQ_ORIGIN(actual, expected, ...) \
+    REQUIRE(scm_object_eq(actual, expected), __VA_ARGS__)
+
+#define REQUIRE_OBJ_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQ, __VA_ARGS__)
+
+#define REQUIRE_OBJ_EQV_ORIGIN(actual, expected, ...) \
+    REQUIRE(scm_object_eqv(actual, expected), __VA_ARGS__)
+
+#define REQUIRE_OBJ_EQV(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQV, __VA_ARGS__)
+
+#define REQUIRE_OBJ_EQUAL_ORIGIN(actual, expected, ...) \
+    REQUIRE(scm_object_equal(actual, expected), __VA_ARGS__)
+
+#define REQUIRE_OBJ_EQUAL(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQUAL, __VA_ARGS__)
+
+#define CHECK_EXC_ORIGIN(msg, exp, ...) \
     do { \
         char *err = NULL; \
         SCM_TRY { \
@@ -65,10 +86,12 @@
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
-        CHECK_SUBSTREQ(err, msg, strlen(msg)); \
+        CHECK_SUBSTREQ(err, msg, strlen(msg), __VA_ARGS__); \
     } while (0)
 
-#define CHECK_NOEXC(exp) \
+#define CHECK_EXC(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_EXC, __VA_ARGS__)
+
+#define CHECK_NOEXC_ORIGIN(exp, ...) \
     do { \
         char *err = NULL; \
         SCM_TRY { \
@@ -77,20 +100,40 @@
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
-        CHECK(!err, "no exception throwed"); \
+        CHECK(!err, __VA_ARGS__); \
     } while (0);
 
-#define CHECK_NOEXC_EQ(exp, val) \
+#define CHECK_NOEXC(...) FIXED1_CHOOSER(__VA_ARGS__)(CHECK_NOEXC, __VA_ARGS__)
+
+#define CHECK_NOEXC_EQ_ORIGIN(exp, val, ...) \
     do { \
         char *err = NULL; \
         SCM_TRY { \
-            CHECK_EQ(exp, val); \
+            CHECK_EQ(exp, val, __VA_ARGS__); \
         } SCM_CATCH { \
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
-        CHECK(!err, "no exception throwed"); \
+        CHECK(!err, __VA_ARGS__); \
     } while (0)
+
+#define CHECK_NOEXC_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_NOEXC_EQ, __VA_ARGS__)
+
+#define CHECK_OBJ_EQ_ORIGIN(actual, expected, ...) \
+    CHECK(scm_object_eq(actual, expected), __VA_ARGS__)
+
+#define CHECK_OBJ_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_EQ, __VA_ARGS__)
+
+#define CHECK_OBJ_EQV_ORIGIN(actual, expected, ...) \
+    CHECK(scm_object_eqv(actual, expected), __VA_ARGS__)
+
+#define CHECK_OBJ_EQV(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_EQV, __VA_ARGS__)
+
+#define CHECK_OBJ_EQUAL_ORIGIN(actual, expected, ...) \
+    CHECK(scm_object_equal(actual, expected), __VA_ARGS__)
+
+#define CHECK_OBJ_EQUAL(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_EQUAL, __VA_ARGS__)
+
 
 #define TEST_INIT() \
     do { \
