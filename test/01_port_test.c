@@ -97,9 +97,9 @@ TEST(port, equivalence) {
 
     for (int i = 0; i < 4; ++i) {
         for (int j = i; j < 4; ++j) {
-            CHECK_EQ(scm_object_eq(ports[i], ports[j]), i == j);
-            CHECK_EQ(scm_object_eqv(ports[i], ports[j]), i == j);
-            CHECK_EQ(scm_object_equal(ports[i], ports[j]), i == j);
+            CHECK_EQ(scm_object_eq(ports[i], ports[j]), i == j, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_eqv(ports[i], ports[j]), i == j, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_equal(ports[i], ports[j]), i == j, "i=%d,j=%d", i, j);
         }
         scm_object_free(ports[i]);
     }

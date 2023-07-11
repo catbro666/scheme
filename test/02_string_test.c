@@ -16,10 +16,10 @@ TEST(string, normal_string) {
     CHECK_EQ(len, 3);
 
     for (i = 0; i < 3; ++i) {
-        CHECK_NOEXC_EQ(scm_string_ref(obj, i), scm_chars[(int)str[i]]);
+        CHECK_NOEXC_EQ(scm_string_ref(obj, i), scm_chars[(int)str[i]], "i=%d", i);
     }
     for (i = -1; i < 4; i = i + 4) {
-        CHECK_EXC("string-ref: index is out of range", scm_string_ref(obj, i));
+        CHECK_EXC("string-ref: index is out of range", scm_string_ref(obj, i), "i=%d", i);
     }
 
     scm_object_free(obj);
@@ -54,7 +54,7 @@ TEST(string, empty_string) {
     int i;
     for (i = -1; i < 2; ++i) {
         CHECK_EXC("string-ref: index is out of range for empty string",
-                  scm_string_ref(obj, i));
+                  scm_string_ref(obj, i), "i=%d", i);
     }
 
     scm_object_free(obj);
@@ -86,16 +86,16 @@ TEST(string, equivalence) {
 
     /* strings that have the same content */
     for (int i = 0; i < n; i += 2) {
-        CHECK_EQ(scm_object_eq(strs[i], strs[i+1]), i == 0); /* only empty string */
-        CHECK_EQ(scm_object_eqv(strs[i], strs[i+1]), i == 0); /* only empty string */
-        CHECK_EQ(scm_object_equal(strs[i], strs[i+1]), 1);
+        CHECK_EQ(scm_object_eq(strs[i], strs[i+1]), i == 0, "i=%d", i); /* only empty string */
+        CHECK_EQ(scm_object_eqv(strs[i], strs[i+1]), i == 0, "i=%d", i); /* only empty string */
+        CHECK_EQ(scm_object_equal(strs[i], strs[i+1]), 1, "i=%d", i);
     }
 
     /* the same string */
     for (int i = 0; i < n; ++i) {
-        CHECK(scm_object_eq(strs[i], strs[i]));
-        CHECK(scm_object_eqv(strs[i], strs[i]));
-        CHECK(scm_object_equal(strs[i], strs[i]));
+        CHECK(scm_object_eq(strs[i], strs[i]), "i=%d", i);
+        CHECK(scm_object_eqv(strs[i], strs[i]), "i=%d", i);
+        CHECK(scm_object_equal(strs[i], strs[i]), "i=%d", i);
         scm_object_free(strs[i]);
     }
 }

@@ -13,12 +13,12 @@ TEST(number, positive_integers) {
     int radices[n] = {10, 16, 2, 8};
     for (i = 0; i < n; ++i) {
         obj = scm_number_new_integer(strs[i], radices[i]);
-        REQUIRE(obj, "scm_number_new_integer");
+        REQUIRE(obj, "scm_number_new_integer, i=%d", i);
 
-        REQUIRE_EQ(obj->type, scm_type_integer);
+        REQUIRE_EQ(obj->type, scm_type_integer, "i=%d", i);
 
         str = scm_number_to_string(obj, radices[i]);
-        REQUIRE_STREQ(str, strs[i]);
+        REQUIRE_STREQ(str, strs[i], "i=%d", i);
 
         free(str);
         scm_object_free(obj);
@@ -36,12 +36,12 @@ TEST(number, zero_negative_integers) {
     int radices[n] = {10, 16, 2, 8, 10, 16, 2, 8};
     for (i = 0; i < n; ++i) {
         obj = scm_number_new_integer(strs[i], radices[i]);
-        REQUIRE(obj, "scm_number_new_integer");
+        REQUIRE(obj, "scm_number_new_integer, i=%d", i);
 
-        REQUIRE_EQ(obj->type, scm_type_integer);
+        REQUIRE_EQ(obj->type, scm_type_integer, "i=%d", i);
 
         str = scm_number_to_string(obj, radices[i]);
-        REQUIRE_STREQ(str, strs[i]);
+        REQUIRE_STREQ(str, strs[i], "i=%d", i);
 
         free(str);
         scm_object_free(obj);
@@ -64,19 +64,19 @@ TEST(number, integer_max_min) {
     for (i = 0; i < n; ++i) {
         for (j = 0; j < 4; ++j) {
             obj = scm_number_new_integer(strs[i], 10);
-            REQUIRE(obj, "scm_number_new_integer");
+            REQUIRE(obj, "scm_number_new_integer, i=%d,j=%d", i, j);
 
-            REQUIRE_EQ(obj->type, scm_type_integer);
+            REQUIRE_EQ(obj->type, scm_type_integer, "i=%d,j=%d", i, j);
 
             str = scm_number_to_string(obj, radices[j]);
 
             obj2 = scm_number_new_integer(str, radices[j]);
-            REQUIRE(obj2, "scm_number_new_integer");
+            REQUIRE(obj2, "scm_number_new_integer, j=%d,j=%d", i, j);
 
-            REQUIRE_EQ(obj2->type, scm_type_integer);
+            REQUIRE_EQ(obj2->type, scm_type_integer, "i=%d,j=%d", i, j);
 
             str2 = scm_number_to_string(obj2, 10);
-            REQUIRE_STREQ(str2, strs[i]);
+            REQUIRE_STREQ(str2, strs[i], "i=%d,j=%d", i, j);
 
             free(str);
             free(str2);
@@ -96,7 +96,7 @@ TEST(number, integer_out_of_range) {
     int radices[n] = {10, 10};
     for (i = 0; i < n; ++i) {
         obj = scm_number_new_integer(strs[i], radices[i]);
-        REQUIRE(!obj, "scm_number_new_integer");
+        REQUIRE(!obj, "scm_number_new_integer, i=%d", i);
     }
 }
 
@@ -111,12 +111,12 @@ TEST(number, floats) {
     char *ress[n] = {"100.0", "0.002", "-3e-06", "-400000.0", "666.0"};
     for (i = 0; i < n; ++i) {
         obj = scm_number_new_float(strs[i]);
-        REQUIRE(obj, "scm_number_new_float");
+        REQUIRE(obj, "scm_number_new_float, i=%d", i);
 
         REQUIRE_EQ(obj->type, scm_type_float);
 
         str = scm_number_to_string(obj, 10);
-        REQUIRE_STREQ(str, ress[i]);
+        REQUIRE_STREQ(str, ress[i], "i=%d", i);
 
         free(str);
         scm_object_free(obj);
@@ -132,7 +132,7 @@ TEST(number, floats_out_of_range) {
     char *strs[n] = {"1e1000", "1e-1000"};
     for (i = 0; i < n; ++i) {
         obj = scm_number_new_float(strs[i]);
-        REQUIRE(!obj, "scm_number_new_float");
+        REQUIRE(!obj, "scm_number_new_float, i=%d", i);
     }
 }
 
@@ -147,12 +147,12 @@ TEST(number, integer_from_float) {
     char *ress[n] = {"100", "0", "-1", "-400000", "666"};
     for (i = 0; i < n; ++i) {
         obj = scm_number_new_integer_from_float(strs[i]);
-        REQUIRE(obj, "scm_number_new_integer_from_float");
+        REQUIRE(obj, "scm_number_new_integer_from_float, i=%d", i);
 
-        REQUIRE_EQ(obj->type, scm_type_integer);
+        REQUIRE_EQ(obj->type, scm_type_integer, "i=%d", i);
 
         str = scm_number_to_string(obj, 10);
-        REQUIRE_STREQ(str, ress[i]);
+        REQUIRE_STREQ(str, ress[i], "i=%d", i);
 
         free(str);
         scm_object_free(obj);
@@ -171,12 +171,12 @@ TEST(number, float_from_integer) {
     char *ress[n] = {"10.0", "16.0", "-2.0", "-8.0"};
     for (i = 0; i < n; ++i) {
         obj = scm_number_new_float_from_integer(strs[i], radices[i]);
-        REQUIRE(obj, "scm_number_new_float_from_integer");
+        REQUIRE(obj, "scm_number_new_float_from_integer, i=%d", i);
 
-        REQUIRE_EQ(obj->type, scm_type_float);
+        REQUIRE_EQ(obj->type, scm_type_float, "i=%d", i);
 
         str = scm_number_to_string(obj, 10);
-        REQUIRE_STREQ(str, ress[i]);
+        REQUIRE_STREQ(str, ress[i], "i=%d", i);
 
         free(str);
         scm_object_free(obj);
@@ -200,9 +200,9 @@ TEST(number, equivalence) {
 
     for (int i = 0; i < n; ++i) {
         for (int j = i; j < n; ++j) {
-            CHECK_EQ(scm_object_eq(nums[i], nums[j]), i/2 == j/2);
-            CHECK_EQ(scm_object_eqv(nums[i], nums[j]), i/2 == j/2);
-            CHECK_EQ(scm_object_equal(nums[i], nums[j]), i/2 == j/2);
+            CHECK_EQ(scm_object_eq(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_eqv(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_equal(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
         }
         scm_object_free(nums[i]);
     }

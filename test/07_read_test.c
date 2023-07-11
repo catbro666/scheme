@@ -16,8 +16,8 @@ TEST(read, simple_datum) {
 
     int n = sizeof(expected) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC(o = scm_read(port));
-        REQUIRE_EQ(o->type, expected[i]);
+        REQUIRE_NOEXC(o = scm_read(port), "i=%d", i);
+        REQUIRE_EQ(o->type, expected[i], "i=%d", i);
         scm_object_free(o);
     }
 
@@ -111,15 +111,15 @@ TEST(read, quote_quasiquote) {
 
     int n = sizeof(expected_type) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC(quote = scm_read(port));
-        REQUIRE_EQ(quote->type, scm_type_pair);
-        REQUIRE_EQ(scm_list_length(quote), 2);
+        REQUIRE_NOEXC(quote = scm_read(port), "i=%d", i);
+        REQUIRE_EQ(quote->type, scm_type_pair, "i=%d", i);
+        REQUIRE_EQ(scm_list_length(quote), 2, "i=%d", i);
         o = scm_list_ref(quote, 0);
-        REQUIRE_EQ(o->type, scm_type_identifier);
-        REQUIRE_STREQ(scm_symbol_get_string(o), expected_id[i]);
+        REQUIRE_EQ(o->type, scm_type_identifier, "i=%d", i);
+        REQUIRE_STREQ(scm_symbol_get_string(o), expected_id[i], "i=%d", i);
 
         o = scm_list_ref(quote, 1);
-        REQUIRE_EQ(o->type, expected_type[i]);
+        REQUIRE_EQ(o->type, expected_type[i], "i=%d", i);
         scm_object_free(quote);
     }
 
@@ -144,15 +144,15 @@ TEST(read, unquote_unquote_splicing) {
 
     int n = sizeof(expected_type) / sizeof(scm_type);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC(unquote = scm_read(port));
-        REQUIRE_EQ(unquote->type, scm_type_pair);
-        REQUIRE_EQ(scm_list_length(unquote), 2);
+        REQUIRE_NOEXC(unquote = scm_read(port), "i=%d", i);
+        REQUIRE_EQ(unquote->type, scm_type_pair, "i=%d", i);
+        REQUIRE_EQ(scm_list_length(unquote), 2, "i=%d", i);
         o = scm_list_ref(unquote, 0);
-        REQUIRE_EQ(o->type, scm_type_identifier);
-        REQUIRE_STREQ(scm_symbol_get_string(o), expected_id[i]);
+        REQUIRE_EQ(o->type, scm_type_identifier, "i=%d", i);
+        REQUIRE_STREQ(scm_symbol_get_string(o), expected_id[i], "i=%d", i);
 
         o = scm_list_ref(unquote, 1);
-        REQUIRE_EQ(o->type, expected_type[i]);
+        REQUIRE_EQ(o->type, expected_type[i], "i=%d", i);
         scm_object_free(unquote);
     }
 
@@ -199,7 +199,7 @@ TEST(read, invalid_token) {
 
     int n = 9;
     for (int i = 0; i < n; ++i) {
-        CHECK_EXC(msgs[i], scm_read(ports[i]));
+        CHECK_EXC(msgs[i], scm_read(ports[i]), "i=%d", i);
         scm_object_free(ports[i]);
     }
 }

@@ -10,7 +10,7 @@ TEST(object, eof_true_false_dot_rparen) {
     scm_type types[] = {scm_type_eof, scm_type_true, scm_type_false, scm_type_dot, scm_type_rparen};
 
     for (i = 0; i < (int)(sizeof(objs)/sizeof(scm_object *)); ++i) {
-      CHECK_EQ(objs[i]->type, types[i]);
+      CHECK_EQ(objs[i]->type, types[i], "i=%d", i);
     }
 }
 
@@ -22,7 +22,7 @@ TEST(object, scm_chars) {
       CHECK_EQ(scm_chars[i]->type, scm_type_char);
 
       char c = scm_char_get_char(scm_chars[i]);
-      CHECK_EQ(c, i);
+      CHECK_EQ(c, i, "i=%d", i);
     }
 }
 
@@ -35,12 +35,12 @@ TEST(object, cant_free_static_objects) {
 
     for (i = 0; i < (int)(sizeof(objs)/sizeof(scm_object *)); ++i) {
       scm_object_free(objs[i]);
-      CHECK_EQ(objs[i]->type, types[i]);
+      CHECK_EQ(objs[i]->type, types[i], "i=%d", i);
     }
 
     for (i = 0; i < 128; ++i) {
       scm_object_free(scm_chars[i]);
-      CHECK_EQ(scm_chars[i]->type, scm_type_char);
+      CHECK_EQ(scm_chars[i]->type, scm_type_char, "i=%d", i);
     }
 }
 
@@ -53,18 +53,18 @@ TEST(object, equivalence) {
     scm_object *trues[] = { scm_eof, scm_true, scm_false, };
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        CHECK(scm_object_eq(trues[i], trues[i]));
-        CHECK(scm_object_eqv(trues[i], trues[i]));
-        CHECK(scm_object_equal(trues[i], trues[i]));
+        CHECK_OBJ_EQ(trues[i], trues[i], "i=%d", i);
+        CHECK_OBJ_EQV(trues[i], trues[i], "i=%d", i);
+        CHECK_OBJ_EQUAL(trues[i], trues[i], "i=%d", i);
     }
 
     scm_object *chars[] = {scm_chars['a'], scm_chars['b']};
 
     for (int i = 0; i < 2; ++i) {
         for (int j = i; j < 2; ++j) {
-            CHECK_EQ(scm_object_eq(chars[i], chars[j]), i == j);
-            CHECK_EQ(scm_object_eqv(chars[i], chars[j]), i == j);
-            CHECK_EQ(scm_object_equal(chars[i], chars[j]), i == j);
+            CHECK_EQ(scm_object_eq(chars[i], chars[j]), i == j, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_eqv(chars[i], chars[j]), i == j, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_equal(chars[i], chars[j]), i == j, "i=%d,j=%d", i, j);
         }
     }
 }

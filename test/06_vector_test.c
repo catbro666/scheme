@@ -146,9 +146,9 @@ TEST(vector, equivalence) {
     int n = sizeof(vecs) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
         for (int j = i; j < n; ++j) {
-            CHECK_EQ(scm_object_eq(vecs[i], vecs[j]), i == j || (i == 0 && j == 1));
-            CHECK_EQ(scm_object_eqv(vecs[i], vecs[j]), i == j || (i == 0 && j == 1));
-            CHECK_EQ(scm_object_equal(vecs[i], vecs[j]), i/2 == j/2);
+            CHECK_EQ(scm_object_eq(vecs[i], vecs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_eqv(vecs[i], vecs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_object_equal(vecs[i], vecs[j]), i/2 == j/2, "i=%d,j=%d", i, j);
         }
         scm_object_free(vecs[i]);
     }

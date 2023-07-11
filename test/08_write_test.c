@@ -23,8 +23,8 @@ TEST(write, simple_datum) {
     int n = sizeof(expected) / sizeof(char *);
     for (int i = 0; i < n; ++i) {
         size_t len = scm_write(oport, objs[i]);
-        REQUIRE_EQ(len, strlen(expected[i]));
-        REQUIRE_STREQ(buf + pos, expected[i]);
+        REQUIRE_EQ(len, strlen(expected[i]), "i=%d", i);
+        REQUIRE_STREQ(buf + pos, expected[i], "i=%d", i);
         pos += len;
     }
 
@@ -45,17 +45,17 @@ TEST(write, char) {
     for (int i = 0; i < n; ++i) {
         size_t len = scm_write(oport, scm_chars[i]);
         if (i == ' ') {
-            REQUIRE_EQ(len, 7);
-            REQUIRE_STREQ(buf + off, "#\\space");
+            REQUIRE_EQ(len, 7, "i=%d", i);
+            REQUIRE_STREQ(buf + off, "#\\space", "i=%d", i);
         }
         else if (i == '\n') {
-            REQUIRE_EQ(len, 9);
-            REQUIRE_STREQ(buf + off, "#\\newline");
+            REQUIRE_EQ(len, 9, "i=%d", i);
+            REQUIRE_STREQ(buf + off, "#\\newline", "i=%d", i);
         }
         else {
-            REQUIRE_EQ(len, 3);
+            REQUIRE_EQ(len, 3, "i=%d", i);
             snprintf(expected, 4, "#\\%c", (char)i);
-            REQUIRE_STREQ(buf + off, expected);
+            REQUIRE_STREQ(buf + off, expected, "i=%d", i);
         }
         off += len;
     }
@@ -85,8 +85,8 @@ TEST(write, number) {
             o = scm_number_new_float(nums[i]);
         }
         size_t len = scm_write(oport, o);
-        REQUIRE_EQ(len, strlen(nums[i]));
-        REQUIRE_STREQ(buf + pos, nums[i]);
+        REQUIRE_EQ(len, strlen(nums[i]), "i=%d", i);
+        REQUIRE_STREQ(buf + pos, nums[i], "i=%d", i);
         pos += len;
         scm_object_free(o);
     }
@@ -150,8 +150,8 @@ TEST(write, pair) {
     int n = sizeof(expected) / sizeof(char *);
     for (int i = 0; i < n; ++i) {
         size_t len = scm_write(oport, objs[i]);
-        REQUIRE_EQ(len, strlen(expected[i]));
-        REQUIRE_STREQ(buf + pos, expected[i]);
+        REQUIRE_EQ(len, strlen(expected[i]), "i=%d", i);
+        REQUIRE_STREQ(buf + pos, expected[i], "i=%d", i);
         pos += len;
         scm_object_free(objs[i]);
     }
@@ -178,8 +178,8 @@ TEST(write, vector) {
     int n = sizeof(expected) / sizeof(char *);
     for (int i = 0; i < n; ++i) {
         size_t len = scm_write(oport, objs[i]);
-        REQUIRE_EQ(len, strlen(expected[i]));
-        REQUIRE_STREQ(buf + pos, expected[i]);
+        REQUIRE_EQ(len, strlen(expected[i]), "i=%d", i);
+        REQUIRE_STREQ(buf + pos, expected[i], "i=%d", i);
         pos += len;
         scm_object_free(objs[i]);
     }
