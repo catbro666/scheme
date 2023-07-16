@@ -10,8 +10,7 @@ TEST(vector, new_ref) {
     REQUIRE(v0, "scm_vector_new 0 elements");
     REQUIRE_EQ(v0->type, scm_type_vector);
     REQUIRE_EQ(scm_vector_length(v0), 0);
-    o = scm_vector_ref(v0, 0);
-    REQUIRE(!o, "invalid index");
+    REQUIRE_EXC("vector-ref: index is out of range", scm_vector_ref(v0, 0));
 
     scm_object *v1 = scm_vector_new(1, scm_chars['a']);
     REQUIRE(v1, "scm_vector_new 1 elements");
@@ -21,8 +20,7 @@ TEST(vector, new_ref) {
     REQUIRE(o, "scm_vector_ref(v1, 0)");
     REQUIRE_EQ(o->type, scm_type_char);
     REQUIRE_EQ(scm_char_get_char(o), 'a');
-    o = scm_vector_ref(v1, 1);
-    REQUIRE(!o, "invalid index");
+    REQUIRE_EXC("vector-ref: index is out of range", scm_vector_ref(v1, 1));
 
     scm_object_free(v0);
     scm_object_free(v1);
@@ -82,8 +80,8 @@ TEST(vector, set) {
     REQUIRE(o, "scm_vector_ref(v1, 1)");
     REQUIRE_EQ(scm_char_get_char(o), 'd');
 
-    REQUIRE(scm_vector_set(v1, -1, scm_chars['x']));
-    REQUIRE(scm_vector_set(v1, 3, scm_chars['x']));
+    REQUIRE_EXC("vector-set!: index is out of range", scm_vector_set(v1, -1, scm_chars['x']));
+    REQUIRE_EXC("vector-set!: index is out of range", scm_vector_set(v1, 3, scm_chars['x']));
 
     scm_object_free(v1);
 }
@@ -146,9 +144,9 @@ TEST(vector, equivalence) {
     int n = sizeof(vecs) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
         for (int j = i; j < n; ++j) {
-            CHECK_EQ(scm_object_eq(vecs[i], vecs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
-            CHECK_EQ(scm_object_eqv(vecs[i], vecs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
-            CHECK_EQ(scm_object_equal(vecs[i], vecs[j]), i/2 == j/2, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_eq(vecs[i], vecs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_eqv(vecs[i], vecs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_equal(vecs[i], vecs[j]), i/2 == j/2, "i=%d,j=%d", i, j);
         }
         scm_object_free(vecs[i]);
     }

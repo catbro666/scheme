@@ -1,4 +1,5 @@
 #include "char.h"
+#include "env.h"
 #include <stdlib.h>
 
 typedef struct scm_char_st {
@@ -38,5 +39,10 @@ int scm_char_init(void) {
     scm_object_register(scm_type_char, &char_methods);
 
     initialized = 1;
+    return 0;
+}
+
+int scm_char_init_env(scm_object *env) {
+    (void)env;
     return 0;
 }

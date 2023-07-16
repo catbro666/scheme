@@ -56,7 +56,6 @@ TEST(pair, list) {
     scm_object *list = scm_list(2, scm_chars['a'], scm_chars['b']);
     REQUIRE(list, "scm_list");
     REQUIRE_EQ(list->type, scm_type_pair);
-    REQUIRE(scm_is_list(list));
     REQUIRE_EQ(scm_list_length(list), 2);
 
     scm_object *car = scm_car(list);
@@ -67,7 +66,6 @@ TEST(pair, list) {
     scm_object *cdr = scm_cdr(list);
     REQUIRE(cdr, "scm_cdr");
     REQUIRE_EQ(cdr->type, scm_type_pair);
-    REQUIRE(scm_is_list(cdr));
     REQUIRE_EQ(scm_list_length(cdr), 1);
 
     scm_object *cadr = scm_car(cdr);
@@ -78,15 +76,12 @@ TEST(pair, list) {
     scm_object *cddr = scm_cdr(cdr);
     REQUIRE(cddr, "empty list");
     REQUIRE_EQ(cddr->type, scm_type_null);
-    REQUIRE(scm_is_list(cddr));
     REQUIRE_EQ(scm_list_length(cddr), 0);
 
     scm_object_free(list);
 
     scm_object *o1 = scm_cons(scm_true, scm_false);
     scm_object *o2 = scm_true;
-    REQUIRE(!scm_is_list(o1));
-    REQUIRE(!scm_is_list(o2));
     REQUIRE_EQ(scm_list_length(o1), -1);
     REQUIRE_EQ(scm_list_length(o2), -1);
     scm_object_free(o1);
@@ -135,9 +130,9 @@ TEST(pair, equivalence) {
     int n = sizeof(pairs) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
         for (int j = i; j < n; ++j) {
-            CHECK_EQ(scm_object_eq(pairs[i], pairs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
-            CHECK_EQ(scm_object_eqv(pairs[i], pairs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
-            CHECK_EQ(scm_object_equal(pairs[i], pairs[j]), i/2 == j/2, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_eq(pairs[i], pairs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_eqv(pairs[i], pairs[j]), i == j || (i == 0 && j == 1), "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_equal(pairs[i], pairs[j]), i/2 == j/2, "i=%d,j=%d", i, j);
         }
         scm_object_free(pairs[i]);
     }

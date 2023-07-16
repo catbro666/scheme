@@ -1,6 +1,10 @@
 #include "string.h"
 #include "err.h"
 #include "char.h"
+#include "number.h"
+#include "proc.h"
+#include "env.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -75,12 +79,22 @@ int scm_string_length(scm_object *obj) {
     return s->len;
 }
 
+static scm_object *prim_string_length(int n, scm_object *args) {
+    (void)n;
+    return INTEGER(scm_string_length(scm_car(args)));
+}
+
 scm_object *scm_string_ref(scm_object *obj, int k) {
     scm_string *s = (scm_string *)obj;
     if (k < 0 || k >= s->len) {
         out_of_range(obj, k);
     }
     return (scm_object *)scm_chars[(int)scm_string_get_char(obj, k)];
+}
+
+static scm_object *prim_string_ref(int n, scm_object *args) {
+    (void)n;
+    return scm_string_ref(scm_car(args), scm_integer_get_val(scm_cadr(args)));
 }
 
 char scm_string_get_char(scm_object *obj, int k) {
@@ -95,8 +109,8 @@ static int string_eqv(scm_object *o1, scm_object *o2) {
 static int string_equal(scm_object *o1, scm_object *o2) {
     scm_string *s1 = (scm_string *)o1;
     scm_string *s2 = (scm_string *)o2;
-    return string_eqv(o1, o2)
-        || (s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len));
+    return string_eqv(o1, o2) ||
+           (s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len));
 }
 
 static scm_object_methods string_methods = { string_free, string_eqv, string_equal };
@@ -110,5 +124,12 @@ int scm_string_init(void) {
     scm_object_register(scm_type_string, &string_methods);
 
     initialized = 1;
+    return 0;
+}
+
+int scm_string_init_env(scm_object *env) {
+    scm_env_add_prim(env, "string-length", prim_string_length, 1, 1, pred_string);
+    scm_env_add_prim(env, "string-ref", prim_string_ref, 2, 2, scm_list(2, pred_string, pred_integer));
+
     return 0;
 }

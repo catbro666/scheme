@@ -26,7 +26,7 @@ static struct iport_callbacks_st {
     peekc_fn peekc;
     unreadc_fn unreadc;
     scm_object_free_fn free;
-    scm_object_eq_fn eqv;
+    scm_eq_fn eqv;
 } iport_callbacks[iport_type_max];
 
 /* output port */
@@ -45,7 +45,7 @@ enum {
 static struct oport_callbacks_st {
     writec_fn writec;
     scm_object_free_fn free;
-    scm_object_eq_fn eqv;
+    scm_eq_fn eqv;
 } oport_callbacks[oport_type_max];
 
 /* specific types of input/output port */
@@ -274,5 +274,10 @@ int scm_port_init(void) {
     scm_object_register(scm_type_output_port, &output_methods);
 
     initialized = 1;
+    return 0;
+}
+
+int scm_port_init_env(scm_object *env) {
+    (void)env;
     return 0;
 }

@@ -1,4 +1,6 @@
 #include "number.h"
+#include "proc.h"
+#include "env.h"
 
 #include <errno.h>
 #include <math.h>
@@ -107,14 +109,15 @@ err:
     return NULL;
 }
 
-int scm_number_is_exact(scm_object *obj) {
-    if (obj->type == scm_type_integer) {
-        return 1;
-    }
-    else {
-        return 0;
-    }
+static scm_object *scm_is_exact(scm_object *obj) {
+    return scm_boolean(obj->type == scm_type_integer);
 }
+define_primitive_1(is_exact);
+
+static scm_object *scm_is_inexact(scm_object *obj) {
+    return scm_boolean(obj->type == scm_type_float);
+}
+define_primitive_1(is_inexact);
 
 static int log2n(int x) {
     int result = -1;
@@ -194,6 +197,34 @@ char *scm_number_to_string(scm_object *obj, int radix) {
     return buf;
 }
 
+scm_object *INTEGER(int n) {
+    scm_integer *i = malloc(sizeof(scm_integer));
+
+    i->base.type = scm_type_integer;
+    i->val = n;
+
+    return (scm_object *)i;
+}
+
+scm_object *FLOAT(double n) {
+    scm_float *i = malloc(sizeof(scm_float));
+
+    i->base.type = scm_type_float;
+    i->val = n;
+
+    return (scm_object *)i;
+}
+
+int scm_integer_get_val(scm_object *obj) {
+    scm_integer *i = (scm_integer *)obj;
+    return i->val;
+}
+
+double scm_float_get_val(scm_object *obj) {
+    scm_float *f = (scm_float *)obj;
+    return f->val;
+}
+
 static int integer_eqv(scm_object *o1, scm_object *o2) {
     return ((scm_integer *)o1)->val == ((scm_integer *)o2)->val;
 }
@@ -217,3 +248,9 @@ int scm_number_init(void) {
     return 0;
 }
 
+int scm_number_init_env(scm_object *env) {
+    scm_env_add_prim(env, "exact?", prim_is_exact, 1, 1, pred_number);
+    scm_env_add_prim(env, "inexact?", prim_is_inexact, 1, 1, pred_number);
+
+    return 0;
+}

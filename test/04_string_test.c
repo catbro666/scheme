@@ -78,24 +78,24 @@ TEST(string, equivalence) {
     /* different strings */
     for (int i = 0; i < n; i += 2) {
         for (int j = i + 2; j < n; j += 2) {
-            CHECK(!scm_object_eq(strs[i], strs[j]), "i=%d, j=%d", i, j);
-            CHECK(!scm_object_eqv(strs[i], strs[j]), "i=%d, j=%d", i, j);
-            CHECK(!scm_object_equal(strs[i], strs[j]), "i=%d, j=%d", i, j);
+            CHECK_OBJ_NEQ(strs[i], strs[j], "i=%d, j=%d", i, j);
+            CHECK_OBJ_NEQV(strs[i], strs[j], "i=%d, j=%d", i, j);
+            CHECK_OBJ_NEQUAL(strs[i], strs[j], "i=%d, j=%d", i, j);
         }
     }
 
     /* strings that have the same content */
     for (int i = 0; i < n; i += 2) {
-        CHECK_EQ(scm_object_eq(strs[i], strs[i+1]), i == 0, "i=%d", i); /* only empty string */
-        CHECK_EQ(scm_object_eqv(strs[i], strs[i+1]), i == 0, "i=%d", i); /* only empty string */
-        CHECK_EQ(scm_object_equal(strs[i], strs[i+1]), 1, "i=%d", i);
+        CHECK_EQ(scm_eq(strs[i], strs[i+1]), i == 0, "i=%d", i); /* only empty string */
+        CHECK_EQ(scm_eqv(strs[i], strs[i+1]), i == 0, "i=%d", i); /* only empty string */
+        CHECK_EQ(scm_equal(strs[i], strs[i+1]), 1, "i=%d", i);
     }
 
     /* the same string */
     for (int i = 0; i < n; ++i) {
-        CHECK(scm_object_eq(strs[i], strs[i]), "i=%d", i);
-        CHECK(scm_object_eqv(strs[i], strs[i]), "i=%d", i);
-        CHECK(scm_object_equal(strs[i], strs[i]), "i=%d", i);
+        CHECK_OBJ_EQ(strs[i], strs[i], "i=%d", i);
+        CHECK_OBJ_EQV(strs[i], strs[i], "i=%d", i);
+        CHECK_OBJ_EQUAL(strs[i], strs[i], "i=%d", i);
         scm_object_free(strs[i]);
     }
 }

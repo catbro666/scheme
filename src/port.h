@@ -16,6 +16,7 @@ scm_object *string_output_port_new(char *buf, int size);
 int scm_output_port_writec(scm_object *port, char c);
 
 int scm_port_init(void);
+int scm_port_init_env(scm_object *env);
 
 #endif /* SCHEME_PORT_H */
 

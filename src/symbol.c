@@ -1,4 +1,7 @@
 #include "symbol.h"
+#include "proc.h"
+#include "env.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -41,8 +44,7 @@ char *scm_symbol_get_string(scm_object *obj) {
 static int symbol_eqv(scm_object *o1, scm_object *o2) {
     scm_symbol *s1 = (scm_symbol *)o1;
     scm_symbol *s2 = (scm_symbol *)o2;
-    return o1 == o2
-        || (s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len));
+    return o1 == o2 || (s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len));
 }
 
 static scm_object_methods symbol_methods = { symbol_free, symbol_eqv, symbol_eqv };
@@ -54,5 +56,10 @@ int scm_symbol_init(void) {
     scm_object_register(scm_type_identifier, &symbol_methods);
 
     initialized = 1;
+    return 0;
+}
+
+int scm_symbol_init_env(scm_object *env) {
+    (void)env;
     return 0;
 }

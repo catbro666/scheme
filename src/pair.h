@@ -2,17 +2,14 @@
 #define SCHEME_PAIR_H
 #include "object.h"
 
-extern scm_object *scm_null;
-
 scm_object *scm_cons(scm_object *car, scm_object *cdr);
 scm_object *scm_car(scm_object *pair);
 scm_object *scm_cdr(scm_object *pair);
-void scm_set_car(scm_object *pair, scm_object *o);
-void scm_set_cdr(scm_object *pair, scm_object *o);
+scm_object *scm_set_car(scm_object *pair, scm_object *o);
+scm_object *scm_set_cdr(scm_object *pair, scm_object *o);
 scm_object *scm_list(int count, ...);
 scm_object *scm_list_ref(scm_object *list, int k);
 int scm_list_length(scm_object *list);
-int scm_is_list(scm_object *list);
 
 scm_object *scm_caar(scm_object *pair);
 scm_object *scm_cadr(scm_object *pair);
@@ -44,6 +41,7 @@ scm_object *scm_cdddar(scm_object *pair);
 scm_object *scm_cddddr(scm_object *pair);
 
 int scm_pair_init(void);
+int scm_pair_init_env(scm_object *env);
 
 #endif /* SCHEME_PAIR_H */
 

@@ -12,11 +12,11 @@ TEST(write, simple_datum) {
     REQUIRE(iport, "string_input_port_new");
 
     scm_object *objs[] = {
-        scm_eof, scm_null, scm_true, scm_false, iport, oport,
+        scm_eof, scm_void, scm_null, scm_true, scm_false, iport, oport,
     };
 
     char *expected[] = {
-        "#<eof-object>", "()", "#t", "#f", "#<input-port>", "#<output-port>",
+        "#<eof-object>", "#<void>", "()", "#t", "#f", "#<input-port>", "#<output-port>",
     };
 
     int pos = 0;

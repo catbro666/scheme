@@ -101,6 +101,9 @@ int scm_write(scm_object *port, scm_object *obj) {
     case scm_type_eof:
         i = write_raw_string(port, "#<eof-object>");
         break;
+    case scm_type_void:
+        i = write_raw_string(port, "#<void>");
+        break;
     case scm_type_null:
         i = write_raw_string(port, "()");
         break;

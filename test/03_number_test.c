@@ -200,9 +200,9 @@ TEST(number, equivalence) {
 
     for (int i = 0; i < n; ++i) {
         for (int j = i; j < n; ++j) {
-            CHECK_EQ(scm_object_eq(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
-            CHECK_EQ(scm_object_eqv(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
-            CHECK_EQ(scm_object_equal(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_eq(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_eqv(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
+            CHECK_EQ(scm_equal(nums[i], nums[j]), i/2 == j/2, "i=%d,j=%d", i, j);
         }
         scm_object_free(nums[i]);
     }

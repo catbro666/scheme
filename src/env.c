@@ -21,7 +21,7 @@ static scm_object * binding_get_val(scm_object *binding) {
 }
 
 static void binding_set_val(scm_object *binding, scm_object *val) {
-    return scm_set_cdr(binding, val);
+    scm_set_cdr(binding, val);
 }
 
 static scm_object *frame_add_binding(scm_object *frame, scm_object *var, scm_object *val) {
@@ -76,7 +76,7 @@ static scm_object *env_rest_frames(scm_object *env) {
 }
 
 static void env_set_first_frame(scm_object *env, scm_object* frame) {
-    return scm_set_car(env, frame);
+    scm_set_car(env, frame);
 }
 
 static int env_is_emtpy(scm_object *env) {
@@ -87,7 +87,7 @@ static scm_object *frame_scan(scm_object *frame, scm_object *var) {
     scm_object *binding = NULL;
     while (!frame_is_empty(frame)) {
         binding = frame_first_binding(frame);
-        if (scm_object_eq(binding_get_var(binding), var)) {
+        if (scm_eq(binding_get_var(binding), var)) {
             return binding;
         }
         frame = frame_rest_bindings(frame);
@@ -152,4 +152,11 @@ void scm_env_define_var(scm_object *env, scm_object *var, scm_object *val) {
     else {
         env_set_first_frame(env, frame_add_binding(env_first_frame(env), var, val));
     }
+}
+
+int scm_env_add_prim(scm_object *env, const char *name, prim_fn fn,
+                     int min_arity, int max_arity, scm_object *preds) {
+    scm_object *prim = scm_primitive_new(name, fn, min_arity, max_arity, preds);
+    scm_env_define_var(env, scm_symbol_new(name, -1), prim);
+    return 0;
 }

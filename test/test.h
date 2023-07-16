@@ -11,9 +11,11 @@
 #include "../src/token.h"
 #include "../src/pair.h"
 #include "../src/vector.h"
+#include "../src/exp.h"
 #include "../src/read.h"
 #include "../src/write.h"
 #include "../src/env.h"
+#include "../src/eval.h"
 
 #include <tau/tau.h>
 #include <limits.h>
@@ -63,19 +65,34 @@
 #define REQUIRE_NOEXC_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_NOEXC_EQ, __VA_ARGS__)
 
 #define REQUIRE_OBJ_EQ_(actual, expected, ...) \
-    REQUIRE_(scm_object_eq(actual, expected), __VA_ARGS__)
+    REQUIRE_(scm_eq(actual, expected), __VA_ARGS__)
 
 #define REQUIRE_OBJ_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQ, __VA_ARGS__)
 
 #define REQUIRE_OBJ_EQV_(actual, expected, ...) \
-    REQUIRE_(scm_object_eqv(actual, expected), __VA_ARGS__)
+    REQUIRE_(scm_eqv(actual, expected), __VA_ARGS__)
 
 #define REQUIRE_OBJ_EQV(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQV, __VA_ARGS__)
 
 #define REQUIRE_OBJ_EQUAL_(actual, expected, ...) \
-    REQUIRE_(scm_object_equal(actual, expected), __VA_ARGS__)
+    REQUIRE_(scm_equal(actual, expected), __VA_ARGS__)
 
 #define REQUIRE_OBJ_EQUAL(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQUAL, __VA_ARGS__)
+
+#define REQUIRE_OBJ_NEQ_(actual, expected, ...) \
+    REQUIRE_(!scm_eq(actual, expected), __VA_ARGS__)
+
+#define REQUIRE_OBJ_NEQ(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQ, __VA_ARGS__)
+
+#define REQUIRE_OBJ_NEQV_(actual, expected, ...) \
+    REQUIRE_(!scm_eqv(actual, expected), __VA_ARGS__)
+
+#define REQUIRE_OBJ_NEQV(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQV, __VA_ARGS__)
+
+#define REQUIRE_OBJ_NEQUAL_(actual, expected, ...) \
+    REQUIRE_(!scm_equal(actual, expected), __VA_ARGS__)
+
+#define REQUIRE_OBJ_NEQUAL(...) FIXED2_CHOOSER(__VA_ARGS__)(REQUIRE_OBJ_EQUAL, __VA_ARGS__)
 
 #define CHECK_EXC_(msg, exp, ...) \
     do { \
@@ -120,19 +137,34 @@
 #define CHECK_NOEXC_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_NOEXC_EQ, __VA_ARGS__)
 
 #define CHECK_OBJ_EQ_(actual, expected, ...) \
-    CHECK_(scm_object_eq(actual, expected), __VA_ARGS__)
+    CHECK_(scm_eq(actual, expected), __VA_ARGS__)
 
 #define CHECK_OBJ_EQ(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_EQ, __VA_ARGS__)
 
 #define CHECK_OBJ_EQV_(actual, expected, ...) \
-    CHECK_(scm_object_eqv(actual, expected), __VA_ARGS__)
+    CHECK_(scm_eqv(actual, expected), __VA_ARGS__)
 
 #define CHECK_OBJ_EQV(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_EQV, __VA_ARGS__)
 
 #define CHECK_OBJ_EQUAL_(actual, expected, ...) \
-    CHECK_(scm_object_equal(actual, expected), __VA_ARGS__)
+    CHECK_(scm_equal(actual, expected), __VA_ARGS__)
 
 #define CHECK_OBJ_EQUAL(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_EQUAL, __VA_ARGS__)
+
+#define CHECK_OBJ_NEQ_(actual, expected, ...) \
+    CHECK_(!scm_eq(actual, expected), __VA_ARGS__)
+
+#define CHECK_OBJ_NEQ(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_NEQ, __VA_ARGS__)
+
+#define CHECK_OBJ_NEQV_(actual, expected, ...) \
+    CHECK_(!scm_eqv(actual, expected), __VA_ARGS__)
+
+#define CHECK_OBJ_NEQV(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_NEQV, __VA_ARGS__)
+
+#define CHECK_OBJ_NEQUAL_(actual, expected, ...) \
+    CHECK_(!scm_equal(actual, expected), __VA_ARGS__)
+
+#define CHECK_OBJ_NEQUAL(...) FIXED2_CHOOSER(__VA_ARGS__)(CHECK_OBJ_NEQUAL, __VA_ARGS__)
 
 
 #define TEST_INIT() \
@@ -156,6 +188,8 @@
         REQUIRE(!res, "scm_pair_init"); \
         res = scm_vector_init(); \
         REQUIRE(!res, "scm_vector_init"); \
+        res = scm_exp_init(); \
+        REQUIRE(!res, "scm_exp_init"); \
     } while (0)
 
 #endif /* SCHEME_TEST_H */

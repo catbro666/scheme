@@ -1,4 +1,7 @@
 #include "pair.h"
+#include "number.h"
+#include "proc.h"
+#include "env.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -8,9 +11,6 @@ typedef struct scm_pair_st {
     scm_object *car;
     scm_object *cdr;
 } scm_pair;
-
-static scm_object scm_null_arr[1] = {{scm_type_null}};
-scm_object *scm_null = scm_null_arr;
 
 scm_object *scm_cons(scm_object *car, scm_object *cdr) {
     scm_pair *pair = malloc(sizeof(scm_pair));
@@ -26,6 +26,7 @@ scm_object *scm_cons(scm_object *car, scm_object *cdr) {
 
     return (scm_object *)pair;
 }
+define_primitive_2(cons);
 
 static void pair_free(scm_object *pair) {
     scm_pair *p = (scm_pair *)pair;
@@ -42,6 +43,7 @@ scm_object *scm_car(scm_object *pair) {
     scm_pair *p = (scm_pair *)pair;
     return p->car;
 }
+define_primitive_1(car);
 
 scm_object *scm_cdr(scm_object *pair) {
     if (pair->type != scm_type_pair) 
@@ -50,17 +52,22 @@ scm_object *scm_cdr(scm_object *pair) {
     scm_pair *p = (scm_pair *)pair;
     return p->cdr;
 }
+define_primitive_1(cdr);
 
-void scm_set_car(scm_object *pair, scm_object *o) {
+scm_object *scm_set_car(scm_object *pair, scm_object *o) {
     scm_pair *p = (scm_pair *)pair;
     /* not free p->car here, may be referenced by others, leave it to gc to consider */
     p->car = o;
+    return scm_void;
 }
+define_primitive_2(set_car);
 
-void scm_set_cdr(scm_object *pair, scm_object *o) {
+scm_object *scm_set_cdr(scm_object *pair, scm_object *o) {
     scm_pair *p = (scm_pair *)pair;
     p->cdr = o;
+    return scm_void;
 }
+define_primitive_2(set_cdr);
 
 static int pair_eqv(scm_object *o1, scm_object *o2) {
     return o1 == o2;
@@ -73,7 +80,7 @@ static int pair_equal(scm_object *o1, scm_object *o2) {
     scm_object *a2 = scm_car(o2);
     scm_object *d1 = scm_cdr(o1);
     scm_object *d2 = scm_cdr(o2);
-    return scm_object_equal(a1, a2) && scm_object_equal(d1, d2);
+    return scm_equal(a1, a2) && scm_equal(d1, d2);
 }
 
 /* create a list */
@@ -89,8 +96,6 @@ scm_object *scm_list(int count, ...) {
     for (int i = 0; i < count ; ++i) {
         obj = va_arg(objs, scm_object*);
         pair = scm_cons(obj, scm_null); 
-        if (!pair)
-            goto err;
 
         if (i == 0) {
             head = pair;
@@ -104,11 +109,11 @@ scm_object *scm_list(int count, ...) {
     va_end(objs);
 
     return head;
-err:
-    if (head) {
-        pair_free(head);
-    }
-    return NULL;
+}
+
+static scm_object *prim_list(int n, scm_object *li) {
+    (void)n;
+    return li;
 }
 
 scm_object *scm_list_ref(scm_object *list, int k) {
@@ -119,14 +124,13 @@ scm_object *scm_list_ref(scm_object *list, int k) {
     }
 
     while (k--) {
-        p = scm_cdr(p); 
+        p = scm_cdr(p);
     }
 
     return scm_car(p);
 }
 
-/* TODO: solve cycle list
- * return -1 when the parameter is not a list */
+/* TODO: solve cycle list */
 int scm_list_length(scm_object *list) {
     int i = 0;
     scm_object *p = list;
@@ -141,9 +145,10 @@ int scm_list_length(scm_object *list) {
     return i;
 }
 
-int scm_is_list(scm_object *list) {
-    return scm_list_length(list) != -1;
+static scm_object *scm_is_list(scm_object *list) {
+    return scm_boolean(scm_list_length(list) != -1);
 }
+define_primitive_1(is_list);
 
 scm_object *scm_caar(scm_object *pair) {
     return scm_car(scm_car(pair));
@@ -265,8 +270,19 @@ int scm_pair_init(void) {
     if (initialized) return 0;
 
     scm_object_register(scm_type_pair, &pair_methods);
-    scm_object_register(scm_type_null, &simple_methods);
 
     initialized = 1;
+    return 0;
+}
+
+int scm_pair_init_env(scm_object *env) {
+    scm_env_add_prim(env, "cons", prim_cons, 2, 2, NULL);
+    scm_env_add_prim(env, "car", prim_car, 1, 1, pred_pair);
+    scm_env_add_prim(env, "cdr", prim_cdr, 1, 1, pred_pair);
+    scm_env_add_prim(env, "set-car!", prim_set_car, 2, 2, scm_list(1, pred_pair));
+    scm_env_add_prim(env, "set-cdr!", prim_set_cdr, 2, 2, scm_list(1, pred_pair));
+    scm_env_add_prim(env, "list", prim_list, 0, -1, NULL);
+    scm_env_add_prim(env, "list?", prim_is_list, 1, 1, NULL);
+
     return 0;
 }
