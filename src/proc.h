@@ -9,7 +9,13 @@ typedef scm_object *(*prim_fn)(int n, scm_object *args);
 scm_object *scm_primitive_new(const char *name, prim_fn fn, int min_arity,
                               int max_arity, scm_object *preds);
 scm_object *scm_compound_new(scm_object *params, scm_object *body, scm_object *env);
-scm_object *scm_apply(scm_object *opt, int n, scm_object *opds);
+const char *scm_procedure_name(scm_object *proc);
+void scm_compound_set_name(scm_object *proc, const char *name);
+void scm_procedure_check_arity(scm_object *opt, int n);
+void scm_procedure_check_contract(scm_object *opt, scm_object *opds);
+scm_object *scm_primitive_apply(scm_object *opt, int n, scm_object *opds);
+scm_object *scm_compound_apply(scm_object *opt, scm_object *opds);
+int scm_proc_init(void);
 
 #define define_primitive_0(name) \
     static scm_object *prim_##name(int n, scm_object *args) { \

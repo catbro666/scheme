@@ -14,11 +14,11 @@ scm_object *scm_boolean(int b) {
 }
 
 scm_object *scm_and(scm_object *b1, scm_object *b2) {
-    return scm_boolean(b1 == scm_true && b2 == scm_true);
+    return scm_boolean(b1 != scm_false && b2 != scm_false);
 }
 
 scm_object *scm_or(scm_object *b1, scm_object *b2) {
-    return scm_boolean(b1 == scm_true || b2 == scm_true);
+    return scm_boolean(b1 != scm_false || b2 != scm_false);
 }
 
 scm_object *scm_not(scm_object *b1) {

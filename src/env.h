@@ -10,6 +10,7 @@ int scm_env_set_var(scm_object *env, scm_object *var, scm_object *val);
 void scm_env_define_var(scm_object *env, scm_object *var, scm_object *val);
 int scm_env_add_prim(scm_object *env, const char *name, prim_fn fn,
                      int min_arity, int max_arity, scm_object *preds);
+scm_object *scm_global_env();
 
 #endif /* SCHEME_ENV_H */
 

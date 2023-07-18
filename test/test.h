@@ -16,6 +16,7 @@
 #include "../src/write.h"
 #include "../src/env.h"
 #include "../src/eval.h"
+#include "../src/proc.h"
 
 #include <tau/tau.h>
 #include <limits.h>
@@ -190,6 +191,8 @@
         REQUIRE(!res, "scm_vector_init"); \
         res = scm_exp_init(); \
         REQUIRE(!res, "scm_exp_init"); \
+        res = scm_proc_init(); \
+        REQUIRE(!res, "scm_proc_init"); \
     } while (0)
 
 #endif /* SCHEME_TEST_H */

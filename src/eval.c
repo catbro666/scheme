@@ -25,7 +25,7 @@ static scm_object *eval_variable(scm_object *exp, scm_object *env) {
 
 static scm_object *eval_assignment(scm_object *exp, scm_object *env) {
     int res = scm_env_set_var(env, scm_exp_get_assignment_var(exp),
-                              scm_exp_get_assignment_val(exp));
+                              scm_eval(scm_exp_get_assignment_val(exp), env));
     if (res)
         scm_error_object(exp, "set!: assignment disallowed;\ncan't set "
                          "variable before its definition\nvariable: ");
@@ -38,8 +38,12 @@ static scm_object *eval_lambda(scm_object *exp, scm_object *env) {
 }
 
 static scm_object *eval_definition(scm_object *exp, scm_object *env) {
-    scm_env_define_var(env, scm_exp_get_definition_var(exp),
-                       scm_exp_get_definition_val(exp));
+    scm_object *var = scm_exp_get_definition_var(exp);
+    scm_object *val = scm_eval(scm_exp_get_definition_val(exp), env);
+    if (val->type == scm_type_compound)
+        scm_compound_set_name(val, scm_symbol_get_string(var));
+    scm_env_define_var(env, var, val);
+
     return scm_void;
 }
 
@@ -50,14 +54,14 @@ static scm_object *eval_if(scm_object *exp, scm_object *env) {
         return scm_eval(scm_exp_get_if_alternate(exp), env);
 }
 
-scm_object *eval_sequence(scm_object *exp, scm_object *env) {
+scm_object *scm_eval_sequence(scm_object *exp, scm_object *env) {
     if (scm_exp_is_sequence_last(exp)) {
         /* tail call */
         return scm_eval(scm_exp_get_sequence_first(exp), env);
     }
     else {
         scm_eval(scm_exp_get_sequence_first(exp), env);
-        return eval_sequence(scm_exp_get_sequence_rest(exp), env);
+        return scm_eval_sequence(scm_exp_get_sequence_rest(exp), env);
     }
 }
 
@@ -224,7 +228,7 @@ scm_object *scm_eval(scm_object *exp, scm_object *env) {
     if (scm_exp_is_if(exp))
         return eval_if(exp, env);
     if (scm_exp_is_begin(exp))
-        return eval_sequence(scm_exp_get_begin_sequence(exp), env);
+        return scm_eval_sequence(scm_exp_get_begin_sequence(exp), env);
     if (scm_exp_is_qq(exp))
         return eval_qq(scm_exp_get_qq_exp(exp), env);
     if (scm_exp_is_unquote(exp))
@@ -236,4 +240,15 @@ scm_object *scm_eval(scm_object *exp, scm_object *env) {
 
     scm_error_object(exp, "eval: bad syntax in: ");
     return NULL;
+}
+
+scm_object *scm_apply(scm_object *opt, int n, scm_object *opds) {
+    scm_procedure_check_arity(opt, n);
+    if (opt->type == scm_type_primitive) {
+        scm_procedure_check_contract(opt, opds);
+        return scm_primitive_apply(opt, n, opds);
+    }
+    else {
+        return scm_compound_apply(opt, opds);
+    }
 }

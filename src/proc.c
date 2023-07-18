@@ -3,6 +3,7 @@
 #include "env.h"
 #include "eval.h"
 
+#include <string.h>
 #include <stdlib.h>
 
 typedef struct scm_primitive_st {
@@ -20,7 +21,7 @@ typedef struct scm_compound_st {
     scm_object base;
     int min_arity;
     int max_arity;
-    const char *name;
+    char *name;
     /* the order of the above fields must be same as the scm_primitive */
     scm_object *params;
     scm_object *body;
@@ -28,12 +29,29 @@ typedef struct scm_compound_st {
 } scm_compound;
 
 static void arity_mismatch(scm_primitive *proc, int n) {
-    char *str = " ";
-    if (proc->max_arity == -1)
-        str = " at least ";
-    scm_error("%s: arity mismatch;\nthe expected number of arguments does not "
-              "match the given number\nexpected:%s%d\ngiven: %d", proc->name,
-              str, proc->min_arity, n);
+    int min = proc->min_arity;
+    int max = proc->max_arity;
+    const char *name = proc->name;
+    const char *str = "";
+    if (name)
+        str = ": ";
+    else
+        name = "";
+    if (min == max) {
+        scm_error("%s%sarity mismatch;\nthe expected number of arguments does "
+                  "not match the given number\nexpected: %d\ngiven: %d",
+                  name, str, min, n);
+    }
+    else if (proc->max_arity == -1) {
+        scm_error("%s%sarity mismatch;\nthe expected number of arguments does "
+                  "not match the given number\nexpected: at least %d\ngiven: "
+                  "%d", name, str, min, n);
+    }
+    else {
+        scm_error("%s%sarity mismatch;\nthe expected number of arguments does "
+                  "not match the given number\nexpected: [%d, %d]\ngiven: %d",
+                  name, str, min, max, n);
+    }
 }
 
 static void contract_violation(scm_object *opt, int n, scm_object *pred, scm_object *opd) {
@@ -41,8 +59,15 @@ static void contract_violation(scm_object *opt, int n, scm_object *pred, scm_obj
                      ((scm_primitive *)opt)->name, n, ((scm_primitive *)pred)->name);
 }
 
-void scm_primitive_free(scm_object *obj) {
-    (void)obj;
+static void primitive_free(scm_object *obj) {
+    free(obj);
+}
+
+static void compound_free(scm_object *obj) {
+    scm_compound *comp = (scm_compound *)obj;
+    if (comp->name)
+        free(comp->name);
+    free(comp);
 }
 
 scm_object *scm_primitive_new(const char *name, prim_fn fn, int min_arity,
@@ -61,6 +86,12 @@ scm_object *scm_primitive_new(const char *name, prim_fn fn, int min_arity,
 scm_object *scm_compound_new(scm_object *params, scm_object *body, scm_object *env) {
     scm_compound *comp = malloc(sizeof(scm_compound));
     comp->base.type = scm_type_compound;
+    comp->max_arity = scm_list_length(params);
+    if (comp->max_arity == -1)
+        comp->min_arity = scm_list_quasilength(params);
+    else
+        comp->min_arity = comp->max_arity;
+
     comp->params = params;
     comp->body = body;
     comp->env = env;
@@ -68,24 +99,38 @@ scm_object *scm_compound_new(scm_object *params, scm_object *body, scm_object *e
     return (scm_object *)comp;
 }
 
-static void check_arity(scm_object *opt, int n) {
+const char *scm_procedure_name(scm_object *proc) {
+    return ((scm_primitive *)proc)->name;
+}
+
+void scm_compound_set_name(scm_object *proc, const char *name) {
+    scm_compound *p = (scm_compound *)proc;
+    /* only set the name when the procedure is first defined */
+    if (!p->name) {
+        int len = strlen(name);
+        p->name = malloc(len + 1);
+        strncpy(p->name, name, len+1);
+    }
+}
+
+void scm_procedure_check_arity(scm_object *opt, int n) {
     scm_primitive *proc = (scm_primitive *)opt;
     if (n < proc->min_arity || (proc->max_arity != -1 && n > proc->max_arity))
         arity_mismatch(proc, n);
 }
 
-static scm_object *scm_primitive_apply(scm_object *opt, int n, scm_object *opds) {
+scm_object *scm_primitive_apply(scm_object *opt, int n, scm_object *opds) {
     scm_primitive *proc = (scm_primitive *)opt;
     return proc->fn(n, opds);
 }
 
-static scm_object *scm_compound_apply(scm_object *opt, scm_object *opds) {
+scm_object *scm_compound_apply(scm_object *opt, scm_object *opds) {
     scm_compound *proc = (scm_compound *)opt;
     scm_object *env = scm_env_extend(proc->env, proc->params, opds);
-    return eval_sequence(proc->body, env);
+    return scm_eval_sequence(proc->body, env);
 }
 
-static void check_contract(scm_object *opt, scm_object *opds) {
+void scm_procedure_check_contract(scm_object *opt, scm_object *opds) {
     if (opt->type == scm_type_compound)
         return;
     scm_primitive *proc = (scm_primitive *)opt;
@@ -112,13 +157,21 @@ static void check_contract(scm_object *opt, scm_object *opds) {
     }
 }
 
-scm_object *scm_apply(scm_object *opt, int n, scm_object *opds) {
-    check_arity(opt, n);
-    if (opt->type == scm_type_primitive) {
-        check_contract(opt, opds);
-        return scm_primitive_apply(opt, n, opds);
-    }
-    else {
-        return scm_compound_apply(opt, opds);
-    }
+static int proc_eqv(scm_object *o1, scm_object *o2) {
+    return o1 == o2;
+}
+
+static scm_object_methods prim_methods = { primitive_free, proc_eqv, proc_eqv };
+static scm_object_methods comp_methods = { compound_free, proc_eqv, proc_eqv };
+
+static int initialized = 0;
+
+int scm_proc_init(void) {
+    if (initialized) return 0;
+
+    scm_object_register(scm_type_primitive, &prim_methods);
+    scm_object_register(scm_type_compound, &comp_methods);
+
+    initialized = 1;
+    return 0;
 }

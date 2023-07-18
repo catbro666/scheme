@@ -145,6 +145,19 @@ int scm_list_length(scm_object *list) {
     return i;
 }
 
+/* treat the last cdr as scm_null */
+int scm_list_quasilength(scm_object *list) {
+    int i = 0;
+    scm_object *p = list;
+    while (p ->type == scm_type_pair) {
+        p = scm_cdr(p);
+        ++i;
+    }
+
+    return i;
+}
+
+
 static scm_object *scm_is_list(scm_object *list) {
     return scm_boolean(scm_list_length(list) != -1);
 }

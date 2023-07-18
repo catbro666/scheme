@@ -1,10 +1,16 @@
 #include "env.h"
 
+#include "port.h"
+#include "char.h"
+#include "number.h"
+#include "string.h"
 #include "symbol.h"
 #include "pair.h"
+#include "vector.h"
 
 #include <stdlib.h>
 
+static scm_object *global_env = NULL;
 /* represent binding as pair
  * represent frame as a list of bindings
  * represent env as a list of frames */
@@ -160,3 +166,23 @@ int scm_env_add_prim(scm_object *env, const char *name, prim_fn fn,
     scm_env_define_var(env, scm_symbol_new(name, -1), prim);
     return 0;
 }
+
+scm_object *scm_global_env() {
+    if (global_env)
+        return global_env;
+
+    global_env = scm_env_new();
+    global_env = scm_env_extend(global_env, scm_null, scm_null);
+
+    scm_object_init_env(global_env);
+    scm_port_init_env(global_env);
+    scm_char_init_env(global_env);
+    scm_number_init_env(global_env);
+    scm_string_init_env(global_env);
+    scm_symbol_init_env(global_env);
+    scm_pair_init_env(global_env);
+    scm_vector_init_env(global_env);
+    return global_env;
+}
+
+

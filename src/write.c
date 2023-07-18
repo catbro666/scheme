@@ -7,8 +7,9 @@
 #include "symbol.h"
 #include "pair.h"
 #include "vector.h"
+#include "proc.h"
 
-static int write_raw_string(scm_object *port, char *str) {
+static int write_raw_string(scm_object *port, const char *str) {
     int i = 0;
     char c;
     while((c = str[i])) {
@@ -94,6 +95,15 @@ static int write_vector(scm_object *port, scm_object *obj) {
     return i;
 }
 
+static int write_procedure(scm_object *port, scm_object *obj) {
+    int i = 0;
+    i = write_raw_string(port, "#<procedure:");
+    const char *str = scm_procedure_name(obj);
+    i += write_raw_string(port, str);
+    i += scm_output_port_writec(port, '>');
+    return i;
+}
+
 /* return the number of bytes written */
 int scm_write(scm_object *port, scm_object *obj) {
     int i = 0;
@@ -138,6 +148,11 @@ int scm_write(scm_object *port, scm_object *obj) {
     case scm_type_output_port:
         i = write_raw_string(port, "#<output-port>");
         break;
+    case scm_type_primitive:
+    case scm_type_compound:
+        i = write_procedure(port, obj);
+        break;
+
     default:
         break;
     }

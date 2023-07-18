@@ -133,6 +133,8 @@ TEST(eval, definition) {
     REQUIRE_EQ(scm_eval(exp2, env), scm_void);
     REQUIRE_EQ(scm_env_lookup_var(env, b), scm_false);
 
+    /* define procedure */
+
     scm_object_free(exp1);
     scm_object_free(exp2);
     scm_object_free(env);
@@ -297,4 +299,27 @@ TEST(eval, quasiquote) {
     REQUIRE_EXC("unquote-splicing: not in quasiquote in", scm_eval(exp30, env));
 
     scm_object_free(env);
+}
+
+TEST(eval, application) {
+    TEST_INIT();
+
+    scm_object *env = scm_global_env();
+    scm_object *a = SYM(a);
+    env = scm_env_extend(env, scm_list(1, a), scm_list(1, scm_cons(scm_true, scm_false)));
+
+    scm_object *exp1 = scm_list(2, SYM(car), SYM(a));
+    REQUIRE_EQ(scm_eval(exp1, env), scm_true);
+    scm_object *exp2 = scm_list(2, SYM(cdr), SYM(a));
+    REQUIRE_EQ(scm_eval(exp2, env), scm_false);
+
+    scm_object *exp3 = scm_list(2, scm_true, scm_true);
+    REQUIRE_EXC("#%app: not a procedure;\nexpected a procedure that can be applied to arguments\ngiven: ",
+                scm_eval(exp3, env));
+
+    /* the number of arguments 'n' is correctly passed */
+    scm_object *exp4 = scm_list(3, SYM(vector), scm_true, scm_false);
+    scm_object *vec = scm_eval(exp4, env);
+    REQUIRE_EQ(vec->type, scm_type_vector);
+    REQUIRE_EQ(scm_vector_length(vec), 2);
 }
