@@ -1,6 +1,7 @@
 #ifndef SCHEME_TEST_H
 #define SCHEME_TEST_H
 
+#include "../src/sys.h"
 #include "../src/object.h"
 #include "../src/port.h"
 #include "../src/err.h"

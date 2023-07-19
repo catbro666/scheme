@@ -71,6 +71,7 @@ define_prim_eq(equal);
 
 define_predicate(boolean, obj == scm_true || obj == scm_false);
 define_predicate(null, obj == scm_null);
+define_predicate(eof, obj == scm_eof);
 define_predicate(char, obj->type == scm_type_char);
 define_predicate(integer, obj->type == scm_type_integer);
 define_predicate(number, obj->type == scm_type_integer || obj->type == scm_type_float);
@@ -123,6 +124,7 @@ int scm_object_init(void) {
     scm_object_register(scm_type_null, &simple_methods);
 
     pred_null = scm_primitive_new("null?", prim_is_null, 1, 1, NULL);
+    pred_eof = scm_primitive_new("eof-object?", prim_is_eof, 1, 1, NULL);
     pred_boolean = scm_primitive_new("boolean?", prim_is_boolean, 1, 1, NULL);
     pred_char = scm_primitive_new("char?", prim_is_char, 1, 1, NULL);
     pred_integer = scm_primitive_new("integer?", prim_is_integer, 1, 1, NULL);

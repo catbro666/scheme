@@ -97,9 +97,12 @@ static int write_vector(scm_object *port, scm_object *obj) {
 
 static int write_procedure(scm_object *port, scm_object *obj) {
     int i = 0;
-    i = write_raw_string(port, "#<procedure:");
+    i = write_raw_string(port, "#<procedure");
     const char *str = scm_procedure_name(obj);
-    i += write_raw_string(port, str);
+    if (str) {
+        i += scm_output_port_writec(port, ':');
+        i += write_raw_string(port, str);
+    }
     i += scm_output_port_writec(port, '>');
     return i;
 }

@@ -1,6 +1,8 @@
 #ifndef SCHEME_ERR_H
 #define SCHEME_ERR_H
 #include "object.h"
+
+#include <stdarg.h>
 #include <setjmp.h>
 
 extern jmp_buf *scm_jmp;
@@ -24,6 +26,8 @@ extern jmp_buf *scm_jmp;
     longjmp(*scm_jmp, 1)
 
 typedef void (*scm_error_free_fn) (void *);
+void scm_error_add(const char *fmt, ...);
+void scm_error_vadd(const char *fmt, va_list args);
 void scm_error(const char *fmt, ...);
 /* @fn: function pointer used to release resource before throw */
 void scm_error_free(scm_error_free_fn fn, void *p, const char *fmt, ...);

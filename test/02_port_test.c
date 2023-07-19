@@ -1,5 +1,7 @@
 #include "test.h"
 
+#include <stdio.h>
+
 TAU_MAIN()
 
 TEST(port, string_input_port) {
@@ -81,6 +83,66 @@ TEST(port, string_output_port) {
     REQUIRE_STREQ(buf, "ab");
 
     scm_object_free(port);
+}
+
+TEST(port, file_input_port) {
+    TEST_INIT();
+    char *name = "test_file.txt";
+    if (sys_file_exists(name))
+        remove(name);
+
+    REQUIRE_EXC("open-input-file: can't open input file\n", file_input_port_open(name));
+
+    FILE* fp = fopen(name, "w");
+    REQUIRE(fp);
+
+    REQUIRE_EQ(fwrite("a 0", 1, 3, fp), 3);
+    fclose(fp);
+
+    scm_object *port = file_input_port_open(name);
+    REQUIRE(port, "file_input_port_open");
+
+    int c = scm_input_port_readc(port);
+    REQUIRE_EQ(c, 'a');
+    c = scm_input_port_readc(port);
+    REQUIRE_EQ(c, ' ');
+    c = scm_input_port_readc(port);
+    REQUIRE_EQ(c, '0');
+    c = scm_input_port_readc(port);
+    REQUIRE_EQ(c, -1);
+
+    scm_object_free(port);
+}
+
+TEST(port, file_output_port) {
+    TEST_INIT();
+    char *name = "test_file.txt";
+    if (sys_file_exists(name))
+        remove(name);
+
+    REQUIRE_EXC("open-output-file: can't open output file\n",
+                file_output_port_open("/usr/a"));
+
+    scm_object *port = file_output_port_open(name);
+    REQUIRE(port, "file_output_port_open");
+
+    REQUIRE_EQ(scm_output_port_writec(port, '1'), 1);
+    REQUIRE_EQ(scm_output_port_writec(port, '2'), 1);
+    REQUIRE_EQ(scm_output_port_writec(port, '\n'), 1);
+
+    scm_object_free(port);
+
+    FILE* fp = fopen(name, "r");
+    REQUIRE(fp);
+
+    char buf[32];
+    REQUIRE(fgets(buf, sizeof(buf), fp));
+    REQUIRE_STREQ(buf, "12\n");
+    REQUIRE(!fgets(buf, 32, fp));
+    REQUIRE(feof(fp));
+
+    fclose(fp);
+    remove(name);
 }
 
 TEST(port, equivalence) {
