@@ -84,7 +84,7 @@ static int pair_equal(scm_object *o1, scm_object *o2) {
 }
 
 /* create a list */
-scm_object *scm_list(int count, ...) {
+scm_object *scm_list(long count, ...) {
     va_list objs;
     va_start(objs, count);
 
@@ -93,7 +93,7 @@ scm_object *scm_list(int count, ...) {
     scm_object *pair = NULL;
     scm_object *obj = NULL;
 
-    for (int i = 0; i < count ; ++i) {
+    for (long i = 0; i < count ; ++i) {
         obj = va_arg(objs, scm_object*);
         pair = scm_cons(obj, scm_null); 
 
@@ -116,7 +116,7 @@ static scm_object *prim_list(int n, scm_object *li) {
     return li;
 }
 
-scm_object *scm_list_ref(scm_object *list, int k) {
+scm_object *scm_list_ref(scm_object *list, long k) {
     scm_object *p = list;
 
     if (k < 0) {
@@ -131,8 +131,8 @@ scm_object *scm_list_ref(scm_object *list, int k) {
 }
 
 /* TODO: solve cycle list */
-int scm_list_length(scm_object *list) {
-    int i = 0;
+long scm_list_length(scm_object *list) {
+    long i = 0;
     scm_object *p = list;
     while (p != scm_null) {
         if (p->type != scm_type_pair) {
@@ -146,8 +146,8 @@ int scm_list_length(scm_object *list) {
 }
 
 /* treat the last cdr as scm_null */
-int scm_list_quasilength(scm_object *list) {
-    int i = 0;
+long scm_list_quasilength(scm_object *list) {
+    long i = 0;
     scm_object *p = list;
     while (p ->type == scm_type_pair) {
         p = scm_cdr(p);

@@ -10,22 +10,22 @@
 typedef struct scm_vector_st {
     scm_object base;
     scm_object **elts;
-    int len;
+    long len;
 } scm_vector;
 
 scm_object *scm_empty_vector = NULL;
 
-static void out_of_range(scm_object *obj, char *name, int k) {
+static void out_of_range(scm_object *obj, char *name, long k) {
     scm_vector *vec = (scm_vector *)obj;
     if (obj == scm_empty_vector)
         scm_error_object(obj, "%s: index is out of range for "
-                         "empty vector\nindex: %d\nvector: ", name, k);
+                         "empty vector\nindex: %ld\nvector: ", name, k);
     else
-        scm_error_object(obj, "%s: index is out of range\nindex: %d\n"
-                         "valid range: [0, %d]\nvector: ", name, k, vec->len-1);
+        scm_error_object(obj, "%s: index is out of range\nindex: %ld\n"
+                         "valid range: [0, %ld]\nvector: ", name, k, vec->len-1);
 }
 
-scm_object *scm_vector_alloc(int count) {
+scm_object *scm_vector_alloc(long count) {
     scm_vector *vec = calloc(1, sizeof(scm_vector));
     vec->base.type = scm_type_vector;
     vec->len = count;
@@ -36,7 +36,7 @@ scm_object *scm_vector_alloc(int count) {
     return (scm_object *)vec;
 }
 
-scm_object *scm_vector_realloc(scm_object *vector, int count) {
+scm_object *scm_vector_realloc(scm_object *vector, long count) {
     scm_vector *vec = (scm_vector *)vector;
     void *new_etls = realloc(vec->elts, count * sizeof(scm_object *));
     if (!new_etls) {
@@ -48,7 +48,7 @@ scm_object *scm_vector_realloc(scm_object *vector, int count) {
     return vector;
 }
 
-scm_object *scm_vector_new(int count, ...) {
+scm_object *scm_vector_new(long count, ...) {
     va_list objs;
     scm_object *obj;
 
@@ -93,7 +93,7 @@ void scm_vector_fill(scm_object *vector, scm_object *fill) {
     }
 }
 
-scm_object *scm_vector_new_fill(int count, scm_object *fill) {
+scm_object *scm_vector_new_fill(long count, scm_object *fill) {
     scm_object *vec = scm_vector_alloc(count);
 
     scm_vector_fill(vec, fill);
@@ -101,7 +101,7 @@ scm_object *scm_vector_new_fill(int count, scm_object *fill) {
     return vec;
 }
 
-static scm_object *scm_make_vector(int n, scm_object *k, scm_object *args) {
+static scm_object *scm_make_vector(long n, scm_object *k, scm_object *args) {
     scm_object *vec = scm_vector_alloc(scm_integer_get_val(k));
     if (n > 1)
         scm_vector_fill(vec, scm_car(args));
@@ -112,7 +112,7 @@ define_primitive_1n(make_vector);
 
 static void vector_free(scm_object *vector) {
     scm_vector *vec = (scm_vector *)vector;
-    int i = vec->len;
+    long i = vec->len;
 
     if (i) {
         while (i--) {
@@ -123,7 +123,7 @@ static void vector_free(scm_object *vector) {
     }
 }
 
-scm_object *scm_vector_ref(scm_object *vector, int k) {
+scm_object *scm_vector_ref(scm_object *vector, long k) {
     scm_vector *vec = (scm_vector *)vector;
 
     if (k < 0 || k >= vec->len) {
@@ -138,7 +138,7 @@ static scm_object *prim_vector_ref(int n, scm_object *args) {
     return scm_vector_ref(scm_car(args), scm_integer_get_val(scm_cadr(args)));
 }
 
-scm_object *scm_vector_set(scm_object *vector, int k, scm_object *obj) {
+scm_object *scm_vector_set(scm_object *vector, long k, scm_object *obj) {
     scm_vector *vec = (scm_vector *)vector;
 
     if (k < 0 || k >= vec->len) {
@@ -154,14 +154,14 @@ static scm_object *prim_vector_set(int n, scm_object *args) {
     return scm_vector_set(scm_car(args), scm_integer_get_val(scm_cadr(args)), scm_caddr(args));
 }
 
-int scm_vector_length(scm_object *vector) {
+long scm_vector_length(scm_object *vector) {
     scm_vector *vec = (scm_vector *)vector;
     return vec->len;
 }
 
 static scm_object *prim_vector_length(int n, scm_object *args) {
     (void)n;
-    int len = scm_vector_length(scm_car(args));
+    long len = scm_vector_length(scm_car(args));
     return INTEGER(len);
 }
 
@@ -171,7 +171,7 @@ scm_object *scm_vector_insert(scm_object *vector, scm_object *obj) {
         vec = scm_vector_new(1, obj);
     }
     else {
-        int len = scm_vector_length(vector);
+        long len = scm_vector_length(vector);
         vec = scm_vector_realloc(vector, len + 1);
         scm_vector_set(vec, len, obj);
     }

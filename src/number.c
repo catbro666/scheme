@@ -197,7 +197,7 @@ char *scm_number_to_string(scm_object *obj, int radix) {
     return buf;
 }
 
-scm_object *INTEGER(int n) {
+scm_object *INTEGER(long n) {
     scm_integer *i = malloc(sizeof(scm_integer));
 
     i->base.type = scm_type_integer;
@@ -215,7 +215,7 @@ scm_object *FLOAT(double n) {
     return (scm_object *)i;
 }
 
-int scm_integer_get_val(scm_object *obj) {
+long scm_integer_get_val(scm_object *obj) {
     scm_integer *i = (scm_integer *)obj;
     return i->val;
 }

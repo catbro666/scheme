@@ -7,10 +7,10 @@ scm_object *scm_car(scm_object *pair);
 scm_object *scm_cdr(scm_object *pair);
 scm_object *scm_set_car(scm_object *pair, scm_object *o);
 scm_object *scm_set_cdr(scm_object *pair, scm_object *o);
-scm_object *scm_list(int count, ...);
-scm_object *scm_list_ref(scm_object *list, int k);
-int scm_list_quasilength(scm_object *list);
-int scm_list_length(scm_object *list);
+scm_object *scm_list(long count, ...);
+scm_object *scm_list_ref(scm_object *list, long k);
+long scm_list_quasilength(scm_object *list);
+long scm_list_length(scm_object *list);
 
 scm_object *scm_caar(scm_object *pair);
 scm_object *scm_cadr(scm_object *pair);

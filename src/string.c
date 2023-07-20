@@ -11,22 +11,22 @@
 typedef struct scm_string_st {
     scm_object base;
     char *buf;
-    int len;   /* NOTE: need proper type */
+    long len;   /* NOTE: need proper type */
 } scm_string;
 
 static scm_object *empty_string = NULL;
 
-static void out_of_range(scm_object *obj, int k) {
+static void out_of_range(scm_object *obj, long k) {
     scm_string *str = (scm_string *)obj;
     if (obj == empty_string)
         scm_error_object(obj, "string-ref: index is out of range for "
-                         "empty string\nindex: %d\nstring: ", k);
+                         "empty string\nindex: %ld\nstring: ", k);
     else
-        scm_error_object(obj, "string-ref: index is out of range\nindex: %d\n"
-                         "valid range: [0, %d]\nstring: ", k, str->len-1);
+        scm_error_object(obj, "string-ref: index is out of range\nindex: %ld\n"
+                         "valid range: [0, %ld]\nstring: ", k, str->len-1);
 }
 
-static scm_object *string_alloc(char *buf, int len) {
+static scm_object *string_alloc(char *buf, long len) {
     scm_string *str = malloc(sizeof(scm_string));
 
     str->base.type = scm_type_string;
@@ -38,7 +38,7 @@ static scm_object *string_alloc(char *buf, int len) {
 }
 
 /* scm_string_new doesn't copy buf */
-scm_object *scm_string_new(char *buf, int len) {
+scm_object *scm_string_new(char *buf, long len) {
     if (len < 0) {
         len = strlen(buf);
     }
@@ -50,7 +50,7 @@ scm_object *scm_string_new(char *buf, int len) {
 }
 
 /* scm_string_copy_new copies buf, for tests */
-scm_object *scm_string_copy_new(const char *buf, int len) {
+scm_object *scm_string_copy_new(const char *buf, long len) {
     if (len < 0) {
         len = strlen(buf);
     }
@@ -74,7 +74,7 @@ static void string_free(scm_object *obj) {
     free(s);
 }
 
-int scm_string_length(scm_object *obj) {
+long scm_string_length(scm_object *obj) {
     scm_string *s = (scm_string *)obj;
     return s->len;
 }
@@ -84,7 +84,7 @@ static scm_object *prim_string_length(int n, scm_object *args) {
     return INTEGER(scm_string_length(scm_car(args)));
 }
 
-scm_object *scm_string_ref(scm_object *obj, int k) {
+scm_object *scm_string_ref(scm_object *obj, long k) {
     scm_string *s = (scm_string *)obj;
     if (k < 0 || k >= s->len) {
         out_of_range(obj, k);
@@ -97,7 +97,7 @@ static scm_object *prim_string_ref(int n, scm_object *args) {
     return scm_string_ref(scm_car(args), scm_integer_get_val(scm_cadr(args)));
 }
 
-char scm_string_get_char(scm_object *obj, int k) {
+char scm_string_get_char(scm_object *obj, long k) {
     scm_string *s = (scm_string *)obj;
     return s->buf[k];
 }
