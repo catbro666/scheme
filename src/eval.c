@@ -24,10 +24,11 @@ static scm_object *eval_variable(scm_object *exp, scm_object *env) {
 }
 
 static scm_object *eval_assignment(scm_object *exp, scm_object *env) {
-    int res = scm_env_set_var(env, scm_exp_get_assignment_var(exp),
-                              scm_eval(scm_exp_get_assignment_val(exp), env));
+    scm_object *var = scm_exp_get_assignment_var(exp);
+    scm_object *val = scm_eval(scm_exp_get_assignment_val(exp), env);
+    int res = scm_env_set_var(env, var, val);
     if (res)
-        scm_error_object(exp, "set!: assignment disallowed;\ncan't set "
+        scm_error_object(var, "set!: assignment disallowed;\ncan't set "
                          "variable before its definition\nvariable: ");
     return scm_void;
 }

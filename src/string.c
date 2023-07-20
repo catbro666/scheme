@@ -23,7 +23,7 @@ static void out_of_range(scm_object *obj, int k) {
                          "empty string\nindex: %d\nstring: ", k);
     else
         scm_error_object(obj, "string-ref: index is out of range\nindex: %d\n"
-                         "valid range: [0, %d]\nstring: ", k, str->len);
+                         "valid range: [0, %d]\nstring: ", k, str->len-1);
 }
 
 static scm_object *string_alloc(char *buf, int len) {

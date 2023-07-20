@@ -22,7 +22,7 @@ static void out_of_range(scm_object *obj, char *name, int k) {
                          "empty vector\nindex: %d\nvector: ", name, k);
     else
         scm_error_object(obj, "%s: index is out of range\nindex: %d\n"
-                         "valid range: [0, %d]\nvector: ", name, k, vec->len);
+                         "valid range: [0, %d]\nvector: ", name, k, vec->len-1);
 }
 
 scm_object *scm_vector_alloc(int count) {

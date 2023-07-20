@@ -366,6 +366,22 @@ int scm_output_port_writec(scm_object *obj, char c) {
     return oport_callbacks[port->type].writec(port, c);
 }
 
+int scm_output_port_puts(scm_object *obj, const char *p) {
+    scm_output_port *port = (scm_output_port *)obj;
+    int i = 0;
+    char c;
+    while ((c = *(p++))) {
+        i += oport_callbacks[port->type].writec(port, c);
+    }
+
+    return i;
+}
+
+int scm_newline(scm_object *obj) {
+    scm_output_port *port = (scm_output_port *)obj;
+    return oport_callbacks[port->type].writec(port, '\n');
+}
+
 static void oport_free(scm_object *obj) {
     scm_output_port *port = (scm_output_port *)obj;
     oport_callbacks[port->type].free(obj);

@@ -7,6 +7,9 @@
 
 extern jmp_buf *scm_jmp;
 
+/* NOTE: there'll be a problem if `break` is used inside the try-catch block
+ * to jump out the loop outside the try-catch block. It will actually jump out
+ * the do-while block which is expanded by SCM_TRY/SCM_CATCH/SCM_END_TRY */
 #define SCM_TRY do { \
     jmp_buf *prev_jmp = scm_jmp; \
     jmp_buf curr_jmp; \
