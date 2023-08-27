@@ -13,6 +13,10 @@ scm_object *scm_vector_ref(scm_object *vector, long k);
 scm_object *scm_vector_set(scm_object *vector, long k, scm_object *obj);
 long scm_vector_length(scm_object *vector);
 scm_object *scm_vector_insert(scm_object *vector, scm_object *obj);
+
+#define FOREACH_VECTOR(i, n, v) \
+    for (long i = 0, n = scm_vector_length(v); i < n; ++i)
+
 int scm_vector_init(void);
 int scm_vector_init_env(scm_object *env);
 

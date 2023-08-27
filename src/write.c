@@ -139,6 +139,9 @@ int scm_write(scm_object *port, scm_object *obj) {
     case scm_type_identifier:
         i = write_raw_string(port, scm_symbol_get_string(obj));
         break;
+    case scm_type_eidentifier:
+        i = write_raw_string(port, scm_esymbol_get_string(obj));
+        break;
     case scm_type_pair:
         i = write_pair(port, obj);
         break;

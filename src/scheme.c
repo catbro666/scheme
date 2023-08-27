@@ -13,6 +13,7 @@
 #include "read.h"
 #include "write.h"
 #include "eval.h"
+#include "xform.h"
 
 #include <stdio.h>
 
@@ -29,6 +30,8 @@ int main()
     scm_vector_init();
     scm_exp_init();
     scm_proc_init();
+    scm_eval_init();
+    scm_xform_init();
 
     scm_object *env = scm_global_env();
     const char *prompt = "> ";

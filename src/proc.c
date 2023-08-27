@@ -157,12 +157,8 @@ void scm_procedure_check_contract(scm_object *opt, scm_object *opds) {
     }
 }
 
-static int proc_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
-static scm_object_methods prim_methods = { primitive_free, proc_eqv, proc_eqv };
-static scm_object_methods comp_methods = { compound_free, proc_eqv, proc_eqv };
+static scm_object_methods prim_methods = { primitive_free, same_object, same_object };
+static scm_object_methods comp_methods = { compound_free, same_object, same_object };
 
 static int initialized = 0;
 

@@ -167,11 +167,11 @@ TEST(write, vector) {
     REQUIRE(oport, "string_output_port_new");
 
     scm_object *objs[] = {
-        scm_empty_vector, scm_vector_new(2, scm_true, scm_false),
+        scm_empty_vector, scm_vector_new(2, scm_true, SYM(a)),
     };
 
     char *expected[] = {
-        "#()", "#(#t #f)",
+        "#()", "#(#t a)",
     };
 
     int pos = 0;

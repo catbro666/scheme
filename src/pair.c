@@ -69,12 +69,8 @@ scm_object *scm_set_cdr(scm_object *pair, scm_object *o) {
 }
 define_primitive_2(set_cdr);
 
-static int pair_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
 static int pair_equal(scm_object *o1, scm_object *o2) {
-    if (pair_eqv(o1, o2))
+    if (same_object(o1, o2))
         return 1;
     scm_object *a1 = scm_car(o1);
     scm_object *a2 = scm_car(o2);
@@ -130,6 +126,33 @@ scm_object *scm_list_ref(scm_object *list, long k) {
     return scm_car(p);
 }
 
+/* the resulting list is not newly allocated, in contrast to append */
+scm_object *scm_list_combine(scm_object *l1, scm_object *l2) {
+    if (l1 == scm_null)
+        return l2;
+    if (l2 == scm_null)
+        return l1;
+
+    FOREACH_LIST(o, l1) {
+        if (l1 == scm_null)
+            scm_set_cdr(o, l2);
+    }
+    return l1;
+}
+
+scm_object *scm_list_last_pair(scm_object *l) {
+    scm_object *d;
+    if (!IS_PAIR(l))
+        return l;
+    while (1) {
+        d = scm_cdr(l);
+        if (IS_PAIR(d))
+            l = d;
+        else
+            return l;
+    }
+}
+
 /* TODO: solve cycle list */
 long scm_list_length(scm_object *list) {
     long i = 0;
@@ -157,6 +180,26 @@ long scm_list_quasilength(scm_object *list) {
     return i;
 }
 
+static int scm_mem_ex(scm_object *o, scm_object *l, scm_eq_fn eq) {
+    while (l != scm_null) {
+        if (eq(o, scm_car(l)))
+            return 1;
+        l = scm_cdr(l);
+    }
+    return 0;
+}
+
+int scm_memq(scm_object *o, scm_object *l) {
+    return scm_mem_ex(o, l, scm_eq);
+}
+
+int scm_memv(scm_object *o, scm_object *l) {
+    return scm_mem_ex(o, l, scm_eqv);
+}
+
+int scm_member(scm_object *o, scm_object *l) {
+    return scm_mem_ex(o, l, scm_equal);
+}
 
 static scm_object *scm_is_list(scm_object *list) {
     return scm_boolean(scm_list_length(list) != -1);
@@ -275,7 +318,7 @@ scm_object *scm_cddddr(scm_object *pair) {
     return scm_cdr(scm_cdr(scm_cdr(scm_cdr(pair))));
 }
 
-static scm_object_methods pair_methods = { pair_free, pair_eqv, pair_equal };
+static scm_object_methods pair_methods = { pair_free, same_object, pair_equal };
 
 static int initialized = 0;
 

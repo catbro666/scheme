@@ -2,6 +2,8 @@
 
 TAU_MAIN()
 
+// vector, null
+
 TEST(eval, self_evaluation) {
     scm_object *o = NULL;
     TEST_INIT();
@@ -27,11 +29,34 @@ TEST(eval, self_evaluation) {
     scm_object_free(env);
 }
 
-TEST(eval, variable) {
+TEST(eval, vector) {
     scm_object *o = NULL;
     TEST_INIT();
 
     scm_object *env = scm_env_new();
+
+    scm_object *vec = scm_vector_new(2, scm_true, SYM(a));
+
+    scm_object *objs[] = {
+        scm_empty_vector, vec,
+    };
+
+    int n = sizeof(objs) / sizeof(scm_object *);
+    for (int i = 0; i < n; ++i) {
+        o = scm_eval(objs[i], env);
+        CHECK(o, "scm_eval(objs[i]), i=%d", i);
+        CHECK_OBJ_EQUAL(o, objs[i], "i=%d", i);
+        scm_object_free(objs[i]);
+    }
+
+    scm_object_free(env);
+}
+
+TEST(eval, variable) {
+    scm_object *o = NULL;
+    TEST_INIT();
+
+    scm_object *env = scm_global_env();
     scm_object *a = SYM(a);
     scm_object *b = SYM(b);
     env = scm_env_extend(env, scm_list(1, a), scm_list(1, scm_true));
@@ -43,17 +68,20 @@ TEST(eval, variable) {
     /* undefined variable */
     REQUIRE_EXC("b: undefined;\n", scm_eval(b, env));
 
-    scm_object_free(env);
+    /* syntax keyword */
+    REQUIRE_EXC("if: bad syntax in", scm_eval(sym_if, env));
 }
 
 TEST(eval, quote) {
     scm_object *o = NULL;
     TEST_INIT();
 
-    scm_object *env = scm_env_new();
+    scm_object *env = scm_global_env();
+    scm_object *a = SYM(a);
+    env = scm_env_extend(env, scm_list(1, a), scm_list(1, scm_cons(scm_true, scm_false)));
 
     scm_object *objs[] = {
-        scm_void, scm_true, scm_cons(scm_true, scm_false),
+        scm_void, scm_true, scm_cons(a, scm_false),
     };
     scm_object *exps[] = {
         scm_list(2, sym_quote, objs[0]),
@@ -63,17 +91,16 @@ TEST(eval, quote) {
 
     int n = sizeof(objs) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        CHECK_EQ((o = scm_eval(exps[i], env)), objs[i], "i=%d", i);
+        CHECK_OBJ_EQUAL((o = scm_eval(exps[i], env)), objs[i], "i=%d", i);
         scm_object_free(objs[i]);
     }
 
-    scm_object_free(env);
 }
 
 TEST(eval, assignment) {
     TEST_INIT();
 
-    scm_object *env = scm_env_new();
+    scm_object *env = scm_global_env();
     scm_object *a = SYM(a);
     scm_object *b = SYM(b);
     env = scm_env_extend(env, scm_list(1, a), scm_list(1, scm_true));
@@ -89,14 +116,13 @@ TEST(eval, assignment) {
 
     scm_object_free(exp1);
     scm_object_free(exp2);
-    scm_object_free(env);
 }
 
 TEST(eval, lambda) {
     scm_object *o = NULL;
     TEST_INIT();
 
-    scm_object *env = scm_env_new();
+    scm_object *env = scm_global_env();
 
     scm_object *exps[] = {
         scm_list(3, sym_lambda, scm_null, scm_true),
@@ -111,14 +137,12 @@ TEST(eval, lambda) {
         CHECK_NOEXC_EQ(o->type, scm_type_compound, "i=%d", i);
         scm_object_free(exps[i]);
     }
-
-    scm_object_free(env);
 }
 
 TEST(eval, definition) {
     TEST_INIT();
 
-    scm_object *env = scm_env_new();
+    scm_object *env = scm_global_env();
     scm_object *a = SYM(a);
     scm_object *b = SYM(b);
     env = scm_env_extend(env, scm_list(1, a), scm_list(1, scm_true));
@@ -137,13 +161,12 @@ TEST(eval, definition) {
 
     scm_object_free(exp1);
     scm_object_free(exp2);
-    scm_object_free(env);
 }
 
 TEST(eval, if) {
     TEST_INIT();
 
-    scm_object *env = scm_env_new();
+    scm_object *env = scm_global_env();
     scm_object *a = SYM(a);
     env = scm_env_extend(env, scm_list(1, a), scm_list(1, scm_true));
 
@@ -168,13 +191,12 @@ TEST(eval, if) {
     scm_object_free(exp2);
     scm_object_free(exp3);
     scm_object_free(exp4);
-    scm_object_free(env);
 }
 
 TEST(eval, begin) {
     TEST_INIT();
 
-    scm_object *env = scm_env_new();
+    scm_object *env = scm_global_env();
     scm_object *a = SYM(a);
     env = scm_env_extend(env, scm_list(1, a), scm_list(1, scm_true));
 
@@ -189,13 +211,12 @@ TEST(eval, begin) {
 
     scm_object_free(exp1);
     scm_object_free(exp2);
-    scm_object_free(env);
 }
 
 TEST(eval, quasiquote) {
     TEST_INIT();
 
-    scm_object *env = scm_env_new();
+    scm_object *env = scm_global_env();
     scm_object *a = SYM(a);
     scm_object *b = SYM(b);
     scm_object *c = SYM(c);
@@ -282,11 +303,11 @@ TEST(eval, quasiquote) {
     scm_object *exp25 = scm_list(2, sym_quasiquote, scm_vector_new(1, scm_vector_new(1, scm_list(2, sym_unquote_splicing, e))));
     REQUIRE_OBJ_EQUAL(scm_eval(exp25, env), scm_vector_new(1, scm_vector_new(2, scm_chars['a'], scm_chars['b'])));
 
-    /* unquote_splicing not in sequence */
+    /* unquote-splicing not in sequence */
     scm_object *exp26 = scm_list(2, sym_quasiquote, scm_list(2, sym_unquote_splicing, d));
     REQUIRE_EXC("unquote-splicing: not in context of sequence in", scm_eval(exp26, env));
 
-    /* unquote_splicing not returning a list */
+    /* unquote-splicing not returning a list */
     scm_object *exp27 = scm_list(2, sym_quasiquote, scm_list(1, scm_list(2, sym_unquote_splicing, a)));
     REQUIRE_EXC("unquote-splicing: not returning a list in", scm_eval(exp27, env));
     scm_object *exp28 = scm_list(2, sym_quasiquote, scm_list(1, scm_list(2, sym_unquote_splicing, b)));
@@ -298,7 +319,39 @@ TEST(eval, quasiquote) {
     scm_object *exp30 = scm_list(2, sym_unquote_splicing, a);
     REQUIRE_EXC("unquote-splicing: not in quasiquote in", scm_eval(exp30, env));
 
-    scm_object_free(env);
+    /* bad syntax: too short/long */
+    scm_object *exp31 = scm_list(2, sym_quasiquote, scm_list(1, sym_unquote));
+    REQUIRE_EXC("unquote: bad syntax in", scm_eval(exp31, env));
+    scm_object *exp32 = scm_list(2, sym_quasiquote, scm_list(1, sym_unquote_splicing));
+    REQUIRE_EXC("unquote-splicing: bad syntax in", scm_eval(exp32, env));
+    scm_object *exp33 = scm_list(2, sym_quasiquote, scm_list(3, sym_unquote, a, a));
+    REQUIRE_EXC("unquote: bad syntax in", scm_eval(exp33, env));
+    scm_object *exp34 = scm_list(2, sym_quasiquote, scm_list(3, sym_unquote_splicing, d, d));
+    REQUIRE_EXC("unquote-splicing: bad syntax in", scm_eval(exp34, env));
+
+    /* unquote/unquote-splicing in the middle of list */
+    scm_object *exp35 = scm_list(2, sym_quasiquote, scm_list(4, a, sym_unquote, a, a));
+    REQUIRE_EXC("unquote: bad syntax in", scm_eval(exp35, env));
+    scm_object *exp36 = scm_list(2, sym_quasiquote, scm_list(4, a, sym_unquote_splicing, d, a));
+    REQUIRE_EXC("unquote-splicing: bad syntax in", scm_eval(exp36, env));
+
+    /* unquote in the last cdr */
+    scm_object *exp37 = scm_list(2, sym_quasiquote, scm_list(3, a, sym_unquote, a));
+    REQUIRE_OBJ_EQUAL(scm_eval(exp37, env), scm_cons(a, scm_true));
+
+    /* unquote-splicing in the last cdr */
+    scm_object *exp38 = scm_list(2, sym_quasiquote, scm_list(3, a, sym_unquote_splicing, d));
+    REQUIRE_EXC("unquote-splicing: not in context of sequence in", scm_eval(exp38, env));
+
+    /* invalid context within quasiquote */
+    scm_object *exp39 = scm_list(2, sym_quasiquote, scm_cons(a, sym_unquote));
+    REQUIRE_EXC("unquote: invalid context within quasiquote in", scm_eval(exp39, env));
+    scm_object *exp40 = scm_list(2, sym_quasiquote, scm_cons(a, sym_unquote_splicing));
+    REQUIRE_EXC("unquote-splicing: invalid context within quasiquote in", scm_eval(exp40, env));
+    scm_object *exp41 = scm_list(2, sym_quasiquote, scm_vector_new(1, sym_unquote));
+    REQUIRE_EXC("unquote: invalid context within quasiquote in", scm_eval(exp41, env));
+    scm_object *exp42 = scm_list(2, sym_quasiquote, scm_vector_new(1, sym_unquote_splicing));
+    REQUIRE_EXC("unquote-splicing: invalid context within quasiquote in", scm_eval(exp42, env));
 }
 
 TEST(eval, application) {
@@ -317,9 +370,16 @@ TEST(eval, application) {
     REQUIRE_EXC("#%app: not a procedure;\nexpected a procedure that can be applied to arguments\ngiven: ",
                 scm_eval(exp3, env));
 
+    scm_object *exp4 = scm_null;
+    REQUIRE_EXC("#%app: missing procedure expression in", scm_eval(exp4, env));
+
+    scm_object *exp5 = scm_cons(scm_true, scm_true);
+    REQUIRE_EXC("#%app: bad syntax in", scm_eval(exp5, env));
+
+
     /* the number of arguments 'n' is correctly passed */
-    scm_object *exp4 = scm_list(3, SYM(vector), scm_true, scm_false);
-    scm_object *vec = scm_eval(exp4, env);
+    scm_object *exp6 = scm_list(3, SYM(vector), scm_true, scm_false);
+    scm_object *vec = scm_eval(exp6, env);
     REQUIRE_EQ(vec->type, scm_type_vector);
     REQUIRE_EQ(scm_vector_length(vec), 2);
 }

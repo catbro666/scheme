@@ -18,6 +18,7 @@
 #include "../src/env.h"
 #include "../src/eval.h"
 #include "../src/proc.h"
+#include "../src/xform.h"
 
 #include <tau/tau.h>
 #include <limits.h>
@@ -33,6 +34,7 @@
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
+        REQUIRE(err, __VA_ARGS__); \
         REQUIRE_SUBSTREQ_(err, msg, strlen(msg), __VA_ARGS__); \
     } while (0)
 
@@ -105,6 +107,7 @@
             err = scm_error_msg(); \
         } SCM_END_TRY; \
  \
+        CHECK(err, __VA_ARGS__); \
         CHECK_SUBSTREQ_(err, msg, strlen(msg), __VA_ARGS__); \
     } while (0)
 
@@ -194,6 +197,10 @@
         REQUIRE(!res, "scm_exp_init"); \
         res = scm_proc_init(); \
         REQUIRE(!res, "scm_proc_init"); \
+        res = scm_xform_init(); \
+        REQUIRE(!res, "scm_xform_init"); \
+        res = scm_eval_init(); \
+        REQUIRE(!res, "scm_eval_init"); \
     } while (0)
 
 #endif /* SCHEME_TEST_H */

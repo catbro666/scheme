@@ -16,11 +16,7 @@ char scm_char_get_char(scm_object *obj) {
     return c->c;
 }
 
-static int char_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
-static scm_object_methods char_methods = { NULL, char_eqv, char_eqv};
+static scm_object_methods char_methods = { NULL, same_object, same_object};
 
 static int initialized = 0;
 

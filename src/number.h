@@ -11,6 +11,8 @@ scm_object *FLOAT(double n);
 
 char *scm_number_to_string(scm_object *obj, int radix);
 long scm_integer_get_val(scm_object *obj);
+void scm_integer_inc(scm_object *obj);
+void scm_integer_dec(scm_object *obj);
 double scm_float_get_val(scm_object *obj);
 
 int scm_number_init(void);

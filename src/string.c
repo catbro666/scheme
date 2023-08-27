@@ -102,18 +102,14 @@ char scm_string_get_char(scm_object *obj, long k) {
     return s->buf[k];
 }
 
-static int string_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
 static int string_equal(scm_object *o1, scm_object *o2) {
     scm_string *s1 = (scm_string *)o1;
     scm_string *s2 = (scm_string *)o2;
-    return string_eqv(o1, o2) ||
+    return same_object(o1, o2) ||
            (s1->len == s2->len && !strncmp(s1->buf, s2->buf, s1->len));
 }
 
-static scm_object_methods string_methods = { string_free, string_eqv, string_equal };
+static scm_object_methods string_methods = { string_free, same_object, string_equal };
 
 static int initialized = 0;
 int scm_string_init(void) {

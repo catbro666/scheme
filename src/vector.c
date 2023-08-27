@@ -178,12 +178,8 @@ scm_object *scm_vector_insert(scm_object *vector, scm_object *obj) {
     return vec;
 }
 
-static int vector_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
 static int vector_equal(scm_object *o1, scm_object *o2) {
-    if (vector_eqv(o1, o2))
+    if (same_object(o1, o2))
         return 1;
     scm_vector *v1 = (scm_vector *)o1;
     scm_vector *v2 = (scm_vector *)o2;
@@ -196,7 +192,7 @@ static int vector_equal(scm_object *o1, scm_object *o2) {
     return 1;
 }
 
-static scm_object_methods vector_methods = { vector_free, vector_eqv, vector_equal };
+static scm_object_methods vector_methods = { vector_free, same_object, vector_equal };
 
 static int initialized = 0;
 

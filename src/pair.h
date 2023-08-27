@@ -9,8 +9,14 @@ scm_object *scm_set_car(scm_object *pair, scm_object *o);
 scm_object *scm_set_cdr(scm_object *pair, scm_object *o);
 scm_object *scm_list(long count, ...);
 scm_object *scm_list_ref(scm_object *list, long k);
+scm_object *scm_list_combine(scm_object *l1, scm_object *l2);
 long scm_list_quasilength(scm_object *list);
 long scm_list_length(scm_object *list);
+scm_object *scm_list_last_pair(scm_object *l);
+/* the caller should ensure `l` a proper list */
+int scm_memq(scm_object *o, scm_object *l);
+int scm_memv(scm_object *o, scm_object *l);
+int scm_member(scm_object *o, scm_object *l);
 
 scm_object *scm_caar(scm_object *pair);
 scm_object *scm_cadr(scm_object *pair);
@@ -40,6 +46,9 @@ scm_object *scm_cddaar(scm_object *pair);
 scm_object *scm_cddadr(scm_object *pair);
 scm_object *scm_cdddar(scm_object *pair);
 scm_object *scm_cddddr(scm_object *pair);
+
+#define FOREACH_LIST(o, l) \
+    for (scm_object *o; (l->type == scm_type_pair) && (o = scm_car(l)) && (l = scm_cdr(l));)
 
 int scm_pair_init(void);
 int scm_pair_init_env(scm_object *env);

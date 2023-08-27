@@ -17,12 +17,15 @@ typedef enum {
     scm_type_float,
     scm_type_string,
     scm_type_identifier,
+    scm_type_eidentifier,
     scm_type_pair,
     scm_type_vector,
     scm_type_input_port,
     scm_type_output_port,
     scm_type_primitive,
     scm_type_compound,
+    scm_type_core_syntax,
+    scm_type_transformer,
     scm_type_max,
 } scm_type;
 
@@ -37,6 +40,12 @@ extern scm_object *scm_dot;
 extern scm_object *scm_rparen;
 extern scm_object *scm_null;
 extern scm_object *scm_void;
+
+#define IS_IDENTIFIER(x)            ((x)->type == scm_type_identifier || (x)->type == scm_type_eidentifier)
+#define IS_RAW_IDENTIFIER(x)        ((x)->type == scm_type_identifier)
+#define IS_EXTENDED_IDENTIFIER(x)   ((x)->type == scm_type_eidentifier)
+#define IS_PAIR(x)                  ((x)->type == scm_type_pair)
+#define IS_VECTOR(x)                ((x)->type == scm_type_vector)
 
 /* free function of the specific type */
 typedef void (*scm_object_free_fn)(scm_object *obj);
@@ -53,6 +62,7 @@ scm_object *scm_or(scm_object *b1, scm_object *b2);
 scm_object *scm_not(scm_object *b1);
 extern scm_object_methods simple_methods;
 
+int same_object(scm_object *o1, scm_object *o2);
 void scm_object_free(scm_object *obj);
 int scm_eq(scm_object *o1, scm_object *o2);
 int scm_eqv(scm_object *o1, scm_object *o2);

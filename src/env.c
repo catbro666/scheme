@@ -7,8 +7,10 @@
 #include "symbol.h"
 #include "pair.h"
 #include "vector.h"
+#include "eval.h"
 
 #include <stdlib.h>
+#include <assert.h>
 
 static scm_object *global_env = NULL;
 /* represent binding as pair
@@ -132,6 +134,10 @@ scm_object *scm_env_extend(scm_object *env, scm_object *vars, scm_object *vals) 
 }
 
 scm_object *scm_env_lookup_var(scm_object *env, scm_object *var) {
+    if (IS_EXTENDED_IDENTIFIER(var)) {
+        env = scm_esymbol_get_env(var);
+        assert(IS_RAW_IDENTIFIER(scm_esymbol_get_symbol(var)));
+    }
     scm_object *binding = env_scan(env, var, 1);
     if (binding) {
         return binding_get_val(binding);
@@ -142,6 +148,10 @@ scm_object *scm_env_lookup_var(scm_object *env, scm_object *var) {
 int scm_env_set_var(scm_object *env, scm_object *var, scm_object *val) {
     scm_object *binding = env_scan(env, var, 1);
     if (binding) {
+        scm_object *oval = binding_get_val(binding);
+        if (oval->type == scm_type_core_syntax ||
+            oval->type == scm_type_transformer)
+            return 2;   /* cannot mutate syntax identifier */
         binding_set_val(binding, val);
         return 0;
     }
@@ -182,6 +192,7 @@ scm_object *scm_global_env() {
     scm_symbol_init_env(global_env);
     scm_pair_init_env(global_env);
     scm_vector_init_env(global_env);
+    scm_eval_init_env(global_env);
     return global_env;
 }
 

@@ -109,6 +109,10 @@ static int always_eqv(scm_object *o1, scm_object *o2) {
     return 1;
 }
 
+int same_object(scm_object *o1, scm_object *o2) {
+    return o1 == o2;
+}
+
 scm_object_methods simple_methods = { NULL, always_eqv, always_eqv};
 
 static int initialized = 0;
@@ -148,7 +152,7 @@ int scm_object_init_env(scm_object *env) {
     scm_env_define_var(env, scm_symbol_new("boolean?", -1), pred_boolean);
     scm_env_define_var(env, scm_symbol_new("char?", -1), pred_char);
     scm_env_define_var(env, scm_symbol_new("integer?", -1), pred_integer);
-    scm_env_define_var(env, scm_symbol_new("real?", -1), pred_number);
+    scm_env_define_var(env, scm_symbol_new("real?", -1), pred_real);
     scm_env_define_var(env, scm_symbol_new("number?", -1), pred_number);
     scm_env_define_var(env, scm_symbol_new("string?", -1), pred_string);
     scm_env_define_var(env, scm_symbol_new("symbol?", -1), pred_symbol);

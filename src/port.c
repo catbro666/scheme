@@ -81,14 +81,10 @@ static void string_input_port_free(scm_object *port) {
     return;
 }
 
-static int string_input_port_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
 static void string_input_port_register() {
     iport_callbacks[iport_type_string].readc = string_input_port_readc;
     iport_callbacks[iport_type_string].free = string_input_port_free;
-    iport_callbacks[iport_type_string].eqv = string_input_port_eqv;
+    iport_callbacks[iport_type_string].eqv = same_object;
     return;
 }
 
@@ -119,14 +115,10 @@ static void file_input_port_free(scm_object *port) {
     return;
 }
 
-static int file_input_port_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
 static void file_input_port_register() {
     iport_callbacks[iport_type_file].readc = file_input_port_readc;
     iport_callbacks[iport_type_file].free = file_input_port_free;
-    iport_callbacks[iport_type_file].eqv = file_input_port_eqv;
+    iport_callbacks[iport_type_file].eqv = same_object;
     return;
 }
 
@@ -155,14 +147,10 @@ static void string_output_port_free(scm_object *port) {
     return;
 }
 
-static int string_output_port_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
 static void string_output_port_register() {
     oport_callbacks[oport_type_string].writec = string_output_port_writec;
     oport_callbacks[oport_type_string].free = string_output_port_free;
-    oport_callbacks[oport_type_string].eqv = string_output_port_eqv;
+    oport_callbacks[oport_type_string].eqv = same_object;
     return;
 }
 
@@ -189,14 +177,10 @@ static void file_output_port_free(scm_object *port) {
     return;
 }
 
-static int file_output_port_eqv(scm_object *o1, scm_object *o2) {
-    return o1 == o2;
-}
-
 static void file_output_port_register() {
     oport_callbacks[oport_type_file].writec = file_output_port_writec;
     oport_callbacks[oport_type_file].free = file_output_port_free;
-    oport_callbacks[oport_type_file].eqv = file_output_port_eqv;
+    oport_callbacks[oport_type_file].eqv = same_object;
     return;
 }
 

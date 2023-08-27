@@ -220,6 +220,16 @@ long scm_integer_get_val(scm_object *obj) {
     return i->val;
 }
 
+void scm_integer_inc(scm_object *obj) {
+    scm_integer *i = (scm_integer *)obj;
+    ++(i->val);
+}
+
+void scm_integer_dec(scm_object *obj) {
+    scm_integer *i = (scm_integer *)obj;
+    --(i->val);
+}
+
 double scm_float_get_val(scm_object *obj) {
     scm_float *f = (scm_float *)obj;
     return f->val;

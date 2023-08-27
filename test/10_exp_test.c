@@ -9,11 +9,11 @@ TEST(exp, self_evaluation) {
     scm_object *trues[] = {
         scm_void, scm_true, scm_false, scm_chars['a'], scm_string_copy_new("abc", 3),
         scm_number_new_integer("1", 10), scm_number_new_float("1.0"), 
-        scm_vector_new(1, scm_chars['1']), scm_vector_new(0),
     };
 
     scm_object *falses[] = {
-        sym_if, scm_cons(scm_chars['1'], scm_chars['2']), scm_null,
+        scm_empty_vector, scm_vector_new(1, scm_chars['1']), sym_if,
+        scm_cons(scm_chars['1'], scm_chars['2']), scm_null,
     };
     /* eof, dot, rparen, port should not appear */
 
@@ -31,38 +31,15 @@ TEST(exp, self_evaluation) {
     }
 }
 
-TEST(exp, variable) {
-    TEST_INIT();
-    char buf[128];
-    REQUIRE_NOEXC_EQ(scm_exp_is_variable(scm_symbol_new("abc", 3)), 1);
-
-    for (int i = 0; i < keywords_num; ++i) {
-        char *str = scm_symbol_get_string(keywords[i]);
-        snprintf(buf, 128, "%s: bad syntax in: %s", str, str);
-        REQUIRE_EXC(buf, scm_exp_is_variable(keywords[i]), "i=%d", i);
-    }
-    REQUIRE_NOEXC_EQ(scm_exp_is_variable(scm_true), 0);
-}
-
 TEST(exp, quote) {
     TEST_INIT();
 
-    /* is quote */
+    /* valid */
     scm_object *q1 = scm_list(2, sym_quote, scm_true);
-    REQUIRE_NOEXC_EQ(scm_exp_is_quote(q1), 1);
+    REQUIRE_NOEXC(scm_exp_check_quote(q1));
     REQUIRE_EQ(scm_exp_get_quote_text(q1), scm_true);
     scm_object_free(q1);
 
-    /* not quote */
-    scm_object *falses[] = {
-        scm_true, scm_cons(scm_true, scm_false), scm_list(2, sym_if, scm_true),
-    };
-    int n = sizeof(falses) / sizeof(scm_object *);
-    for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_quote(falses[i]), 0, "i=%d", i);
-        scm_object_free(falses[i]);
-    }
-    
     /* invalid */
     scm_object *invalids[] = {
         scm_list(3, sym_quote, scm_true, scm_false),
@@ -74,26 +51,23 @@ TEST(exp, quote) {
         "quote: bad syntax in: (quote . #t)",
         "quote: bad syntax in: (quote #t . #f)",
     };
-    n = sizeof(invalids) / sizeof(scm_object *);
+    int n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC(msgs[i], scm_exp_is_quote(invalids[i]), "i=%d", i);
+        REQUIRE_EXC(msgs[i], scm_exp_check_quote(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, assignment) {
     TEST_INIT();
 
-    /* is assignment */
+    /* valid */
     scm_object *e1 = scm_list(3, sym_set, sym_do, scm_true);
-    REQUIRE_NOEXC_EQ(scm_exp_is_assignment(e1), 1);
+    REQUIRE_NOEXC(scm_exp_check_assignment(e1));
     REQUIRE_EQ(scm_exp_get_assignment_var(e1), sym_do);
     REQUIRE_EQ(scm_exp_get_assignment_val(e1), scm_true);
     scm_object_free(e1);
 
-    /* not assignment */
-    REQUIRE_NOEXC_EQ(scm_exp_is_assignment(scm_true), 0);
-    
     /* invalid */
     scm_object *invalids[] = {
         scm_list(2, sym_set, scm_symbol_new("a", -1)),
@@ -107,18 +81,15 @@ TEST(exp, assignment) {
     };
     int n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC(msgs[i], scm_exp_is_assignment(invalids[i]), "i=%d", i);
+        REQUIRE_EXC(msgs[i], scm_exp_check_assignment(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, lambda) {
     TEST_INIT();
 
-    /* not lambda */
-    REQUIRE_NOEXC_EQ(scm_exp_is_lambda(scm_true), 0);
-
-     /* is lambda */
+     /* valid */
     scm_object *params[] = {
         scm_symbol_new("x", -1),
         scm_null,
@@ -142,7 +113,7 @@ TEST(exp, lambda) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_lambda(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_lambda(trues[i]), "i=%d", i);
         REQUIRE_EQ(scm_exp_get_lambda_parameters(trues[i]), params[i], "i=%d", i);
         REQUIRE_EQ(scm_exp_get_lambda_body(trues[i]), bodies[i], "i=%d", i);
         scm_object_free(trues[i]);
@@ -165,16 +136,13 @@ TEST(exp, lambda) {
     };
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC(msgs[i], scm_exp_is_lambda(invalids[i]), "i=%d", i);
+        REQUIRE_EXC(msgs[i], scm_exp_check_lambda(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, definition) {
     TEST_INIT();
-
-    /* false */
-    REQUIRE_NOEXC_EQ(scm_exp_is_definition(scm_true), 0);
 
      /* true */
     scm_object *sym_x = scm_symbol_new("x", -1);
@@ -199,7 +167,7 @@ TEST(exp, definition) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_definition(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_definition(trues[i]), "i=%d", i);
         REQUIRE_OBJ_EQ(scm_exp_get_definition_var(trues[i]), vars[i], "i=%d", i);
         REQUIRE_OBJ_EQUAL(scm_exp_get_definition_val(trues[i]), vals[i], "i=%d", i);
         scm_object_free(trues[i]);
@@ -233,16 +201,13 @@ TEST(exp, definition) {
     };
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC(msgs[i], scm_exp_is_definition(invalids[i]), "i=%d", i);
+        REQUIRE_EXC(msgs[i], scm_exp_check_definition(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, if) {
     TEST_INIT();
-
-    /* false */
-    REQUIRE_NOEXC_EQ(scm_exp_is_if(scm_true), 0);
 
      /* true */
     scm_object *trues[] = {
@@ -261,7 +226,7 @@ TEST(exp, if) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_if(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_if(trues[i]), "i=%d", i);
         REQUIRE_EQ(scm_exp_get_if_test(trues[i]), tests[i], "i=%d", i);
         REQUIRE_EQ(scm_exp_get_if_consequent(trues[i]), conses[i], "i=%d", i);
         REQUIRE_EQ(scm_exp_get_if_alternate(trues[i]), alters[i], "i=%d", i);
@@ -276,16 +241,13 @@ TEST(exp, if) {
     };
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC("if: bad syntax in: ", scm_exp_is_if(invalids[i]), "i=%d", i);
+        REQUIRE_EXC("if: bad syntax in: ", scm_exp_check_if(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, begin) {
     TEST_INIT();
-
-    /* false */
-    REQUIRE_NOEXC_EQ(scm_exp_is_begin(scm_true), 0);
 
      /* true */
     scm_object *trues[] = {
@@ -298,7 +260,7 @@ TEST(exp, begin) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_begin(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_begin(trues[i]), "i=%d", i);
         scm_object *seq = scm_exp_get_begin_sequence(trues[i]);
         REQUIRE_EQ(seq, exps[i], "i=%d", i);
         REQUIRE_EQ(scm_exp_get_sequence_first(seq), scm_car(exps[i]), "i=%d", i);
@@ -319,16 +281,13 @@ TEST(exp, begin) {
 
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC(errs[i], scm_exp_is_begin(invalids[i]), "i=%d", i);
+        REQUIRE_EXC(errs[i], scm_exp_check_begin(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, qq) {
     TEST_INIT();
-
-    /* false */
-    REQUIRE_NOEXC_EQ(scm_exp_is_qq(scm_true), 0);
 
      /* true */
     scm_object *trues[] = {
@@ -341,7 +300,7 @@ TEST(exp, qq) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_qq(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_qq(trues[i]), "i=%d", i);
         REQUIRE_EQ(scm_exp_get_qq_exp(trues[i]), exps[i], "i=%d", i);
         scm_object_free(trues[i]);
     }
@@ -355,16 +314,13 @@ TEST(exp, qq) {
 
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC("quasiquote: bad syntax in", scm_exp_is_qq(invalids[i]), "i=%d", i);
+        REQUIRE_EXC("quasiquote: bad syntax in", scm_exp_check_qq(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, unquote) {
     TEST_INIT();
-
-    /* false */
-    REQUIRE_NOEXC_EQ(scm_exp_is_unquote(scm_true), 0);
 
      /* true */
     scm_object *trues[] = {
@@ -377,7 +333,7 @@ TEST(exp, unquote) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_unquote(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_unquote(trues[i]), "i=%d", i);
         REQUIRE_EQ(scm_exp_get_unquote_exp(trues[i]), exps[i], "i=%d", i);
         scm_object_free(trues[i]);
     }
@@ -391,16 +347,13 @@ TEST(exp, unquote) {
 
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC("unquote: bad syntax in", scm_exp_is_unquote(invalids[i]), "i=%d", i);
+        REQUIRE_EXC("unquote: bad syntax in", scm_exp_check_unquote(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, unquote_splicing) {
     TEST_INIT();
-
-    /* false */
-    REQUIRE_NOEXC_EQ(scm_exp_is_unquote_splicing(scm_true), 0);
 
      /* true */
     scm_object *trues[] = {
@@ -413,7 +366,7 @@ TEST(exp, unquote_splicing) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_unquote_splicing(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_unquote_splicing(trues[i]), "i=%d", i);
         REQUIRE_EQ(scm_exp_get_unquote_splicing_exp(trues[i]), exps[i], "i=%d", i);
         scm_object_free(trues[i]);
     }
@@ -427,16 +380,13 @@ TEST(exp, unquote_splicing) {
 
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC("unquote-splicing: bad syntax in", scm_exp_is_unquote_splicing(invalids[i]), "i=%d", i);
+        REQUIRE_EXC("unquote-splicing: bad syntax in", scm_exp_check_unquote_splicing(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
-    } 
+    }
 }
 
 TEST(exp, application) {
     TEST_INIT();
-
-    /* false */
-    REQUIRE_NOEXC_EQ(scm_exp_is_application(scm_true), 0);
 
      /* true */
     scm_object *trues[] = {
@@ -453,7 +403,7 @@ TEST(exp, application) {
 
     int n = sizeof(trues) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_NOEXC_EQ(scm_exp_is_application(trues[i]), 1, "i=%d", i);
+        REQUIRE_NOEXC(scm_exp_check_application(trues[i]), "i=%d", i);
         REQUIRE_EQ(scm_exp_get_application_operator(trues[i]), opts[i], "i=%d", i);
         REQUIRE_EQ(scm_exp_get_application_operands(trues[i]), opds[i], "i=%d", i);
         scm_object_free(trues[i]);
@@ -461,20 +411,101 @@ TEST(exp, application) {
    
     /* invalid */
     scm_object *invalids[] = {
-        scm_null,
         scm_cons(scm_true, scm_true),
     };
 
     char *errs[] = {
-        "#%app: missing procedure expression in",
         "#%app: bad syntax in",
     };
 
     n = sizeof(invalids) / sizeof(scm_object *);
     for (int i = 0; i < n; ++i) {
-        REQUIRE_EXC(errs[i], scm_exp_is_application(invalids[i]), "i=%d", i);
+        REQUIRE_EXC(errs[i], scm_exp_check_application(invalids[i]), "i=%d", i);
+        scm_object_free(invalids[i]);
+    }
+}
+
+TEST(exp, let_syntax) {
+    TEST_INIT();
+
+     /* true */
+    scm_object *exp1 = scm_list(3, sym_let_syntax, scm_null, scm_true);
+    scm_object *exp2 = scm_list(3, sym_let_syntax, scm_list(1,
+            scm_list(2, SYM(a), scm_list(3, SYM(syntax-rules), scm_null,
+                                         scm_list(2, scm_list(1, sym_underscore), scm_true)))), scm_true);
+    scm_object *trues[] = {
+        exp1, exp2,
+    };
+    int n = sizeof(trues) / sizeof(scm_object *);
+    for (int i = 0; i < n; ++i) {
+        REQUIRE_NOEXC(scm_exp_check_let_syntax(trues[i]), "i=%d", i);
+        REQUIRE_EQ(scm_exp_get_syntax_bindings(trues[i]), scm_cadr(trues[i]), "i=%d", i);
+        REQUIRE_EQ(scm_exp_get_let_syntax_body(trues[i]), scm_cddr(trues[i]), "i=%d", i);
+        scm_object_free(trues[i]);
+    }
+
+    /* invalid */
+    scm_object *invalids[] = {
+        scm_list(2, sym_let_syntax, scm_null),
+    };
+
+    n = sizeof(invalids) / sizeof(scm_object *);
+    for (int i = 0; i < n; ++i) {
+        REQUIRE_EXC("let-syntax: bad syntax in", scm_exp_check_let_syntax(invalids[i]), "i=%d", i);
+        scm_object_free(invalids[i]);
+    }
+}
+
+TEST(exp, macro_binding) {
+    TEST_INIT();
+
+    /* invalid */
+    scm_object *invalids[] = {
+        scm_list(2, sym_define_syntax, SYM(a)),
+        scm_list(4, sym_define_syntax, SYM(a), scm_true, scm_true),
+        scm_list(3, sym_define_syntax, scm_true, scm_true),
+    };
+
+    char *errs[] = {
+        "macro-binding: must be the form of `(<keyword> <transformer spec>)` in",
+        "macro-binding: must be the form of `(<keyword> <transformer spec>)` in",
+        "macro-binding: <keyword> must be an identifier in:",
+    };
+
+
+    int n = sizeof(invalids) / sizeof(scm_object *);
+    for (int i = 0; i < n; ++i) {
+        REQUIRE_EXC(errs[i], scm_exp_check_define_syntax(invalids[i]), "i=%d", i);
+        scm_object_free(invalids[i]);
+    }
+}
+
+TEST(exp, syntax_rules) {
+    TEST_INIT();
+
+    /* invalid */
+    scm_object *invalids[] = {
+        scm_list(3, sym_define_syntax, SYM(a), scm_list(1, SYM(syntax-rules))),
+        scm_list(3, sym_define_syntax, SYM(a), scm_list(2, SYM(a), scm_true)),
+        scm_list(3, sym_define_syntax, SYM(a), scm_list(2, SYM(syntax-rules), scm_true)),
+        scm_list(3, sym_define_syntax, SYM(a), scm_list(2, SYM(syntax-rules), scm_list(1, scm_true))),
+        scm_list(3, sym_define_syntax, SYM(a), scm_list(2, SYM(syntax-rules), scm_list(1, sym_ellipsis))),
+        scm_list(3, sym_define_syntax, SYM(a), scm_list(2, SYM(syntax-rules), scm_list(1, sym_underscore))),
+    };
+
+    char *errs[] = {
+        "syntax-rules: bad syntax in",
+        "syntax-rules: only a `syntax-rules' form is allowed in",
+        "syntax-rules: <literals> must be a list of identifiers",
+        "syntax-rules: <literals> must be a list of identifiers",
+        "syntax-rules: `...` is not allowed in <literals>",
+        "syntax-rules: `_` is not allowed in <literals>",
+    };
+
+
+    int n = sizeof(invalids) / sizeof(scm_object *);
+    for (int i = 0; i < n; ++i) {
+        REQUIRE_EXC(errs[i], scm_exp_check_define_syntax(invalids[i]), "i=%d", i);
         scm_object_free(invalids[i]);
     } 
 }
-
-
