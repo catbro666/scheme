@@ -201,6 +201,27 @@ int scm_member(scm_object *o, scm_object *l) {
     return scm_mem_ex(o, l, scm_equal);
 }
 
+static scm_object *scm_ass_ex(scm_object *o, scm_object *l, scm_eq_fn eq) {
+    while (l != scm_null) {
+        if (eq(o, scm_caar(l)))
+            return scm_car(l);
+        l = scm_cdr(l);
+    }
+    return scm_false;
+}
+
+scm_object *scm_assq(scm_object *o, scm_object *l) {
+    return scm_ass_ex(o, l, scm_eq);
+}
+
+scm_object *scm_assv(scm_object *o, scm_object *l) {
+    return scm_ass_ex(o, l, scm_eqv);
+}
+
+scm_object *scm_assoc(scm_object *o, scm_object *l) {
+    return scm_ass_ex(o, l, scm_equal);
+}
+
 static scm_object *scm_is_list(scm_object *list) {
     return scm_boolean(scm_list_length(list) != -1);
 }

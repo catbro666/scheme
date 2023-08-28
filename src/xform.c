@@ -44,7 +44,7 @@ static void xformer_free(scm_object *obj) {
 #define rule_template scm_cadr
 
 static int check_subpattern(scm_object *pat, scm_object *literals, scm_object **pids, int depth);
-static int check_template(scm_object *temp, scm_object *pids, long depth, long delta, int escape);
+static int check_subtemplate(scm_object *temp, scm_object *pids, long depth, long delta, int escape);
 static scm_object *match_list_pattern(scm_object *lf, scm_object *lp,
     scm_object *literals, scm_object *oenv, scm_object *nenv);
 static scm_object *match_vector_pattern(scm_object *vf, scm_object *vp,
@@ -100,7 +100,7 @@ static int check_list_pattern(scm_object *pat, scm_object *literals, scm_object 
             nexto = scm_car(l);
             if (scm_eq(nexto, sym_ellipsis)) {
                 if (scm_cdr(l) != scm_null)
-                    syntax_rules_error(pat, "the `...` must be at the end of a <pattern> with a proper list or vector form");
+                    syntax_rules_error(pat, "the `...` must be at the end of a <pattern> in the sequence form");
                 before_ellipsis = 1;
             }
         }
@@ -117,7 +117,7 @@ static int check_list_pattern(scm_object *pat, scm_object *literals, scm_object 
     }
     if (l != scm_null) {
         if (scm_eq(l, sym_ellipsis))
-            syntax_rules_error(l, "the `...` must at the end of a <pattern> with a proper list or vector form");
+            syntax_rules_error(l, "the `...` must be at the end of a <pattern> in the sequence form");
         elem_contains_pid = check_subpattern(l, literals, pids, depth);
         list_contains_pid = list_contains_pid || elem_contains_pid;
     }
@@ -137,7 +137,7 @@ static int check_vector_pattern(scm_object *pat, scm_object *literals, scm_objec
         if (i < (len - 1)) {
             if (scm_eq(scm_vector_ref(pat, i+1), sym_ellipsis)) {
                 if (i != (len - 2))
-                    syntax_rules_error(pat, "the `...` must at the end of a <pattern> with a proper list or vector form");
+                    syntax_rules_error(pat, "the `...` must be at the end of a <pattern> in the sequence form");
                 before_ellipsis = 1;
             }
         }
@@ -167,11 +167,11 @@ static scm_object *add_pattern_var(scm_object *pids, scm_object *pid, long depth
 }
 
 static long get_pattern_var_depth(scm_object *pids, scm_object *pid) {
-    FOREACH_LIST(o, pids) {
-        if (scm_eq(scm_car(o), pid))
-            return scm_integer_get_val(scm_cdr(o));
-    }
-    return -1;
+    scm_object *o = scm_assq(pid, pids);
+    if (o == scm_false)
+        return -1;
+    else
+        return scm_integer_get_val(scm_cdr(o));
 }
 
 /* returns a value denotes if the subpattern contains pid or not */
@@ -207,7 +207,7 @@ static int check_list_template(scm_object *temp, scm_object *pids, long depth, i
         l = scm_cdr(l);
         if (l->type != scm_type_pair || scm_cdr(l) != scm_null)
             syntax_rules_error(temp, "illegal use of `...` in template");
-        return check_template(scm_car(l), pids, depth, 0, 1);
+        return check_subtemplate(scm_car(l), pids, depth, 0, 1);
     }
 
     while (l->type == scm_type_pair) {
@@ -222,11 +222,18 @@ static int check_list_template(scm_object *temp, scm_object *pids, long depth, i
             l = scm_cdr(l);
         }
 
-        dep = check_template(o, pids, depth, ellipses, escape);
+        dep = check_subtemplate(o, pids, depth, ellipses, escape);
         if (dep > max_depth)
             max_depth = dep;
         o = nexto;
     }
+
+    if (l != scm_null) {
+        dep = check_subtemplate(l, pids, depth, 0, escape);
+        if (dep > max_depth)
+            max_depth = dep;
+    }
+
     return max_depth;
 }
 
@@ -251,7 +258,7 @@ static int check_vector_template(scm_object *temp, scm_object *pids, long depth,
                 break;
             ++i;
         }
-        dep = check_template(o, pids, depth, ellipses, escape);
+        dep = check_subtemplate(o, pids, depth, ellipses, escape);
         if (dep > max_depth)
             max_depth = dep;
         ++i;
@@ -261,7 +268,7 @@ static int check_vector_template(scm_object *temp, scm_object *pids, long depth,
     return max_depth;
 }
 
-static int check_template(scm_object *temp, scm_object *pids, long depth, long delta, int escape) {
+static int check_subtemplate(scm_object *temp, scm_object *pids, long depth, long delta, int escape) {
     const char *too_many_ellipses =
     "subtemplates that are followed by `...` must contain at least 1 pattern variable "
     "that occurs in subpattern followed by as many instances of the identifier `...`";
@@ -293,7 +300,13 @@ static int check_template(scm_object *temp, scm_object *pids, long depth, long d
     return dep - delta;
 }
 
-static scm_object *check_pattern(scm_object *pat, scm_object *literals) {
+/* export this function for test purpose */
+int check_template(scm_object *temp, scm_object *pids) {
+    return check_subtemplate(temp, pids, 0, 0, 0);
+}
+
+/* export this function for test purpose */
+scm_object *check_pattern(scm_object *pat, scm_object *literals) {
     if (pat->type != scm_type_pair)
         syntax_rules_error(pat, "the outermost <pattern> must be a list-structured form");
 
@@ -309,7 +322,7 @@ void check_syntax_rule(scm_object *rule, scm_object *literals) {
         syntax_rules_error(rule, "<syntax rule> should be of the form (<pattern> <template>)");
     /* check the detail of syntax rule later */
     scm_object *pids = check_pattern(rule_pattern(rule), literals);
-    check_template(rule_template(rule), pids, 0, 0, 0);
+    check_template(rule_template(rule), pids);
 }
 
 

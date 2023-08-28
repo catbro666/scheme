@@ -17,6 +17,9 @@ scm_object *scm_list_last_pair(scm_object *l);
 int scm_memq(scm_object *o, scm_object *l);
 int scm_memv(scm_object *o, scm_object *l);
 int scm_member(scm_object *o, scm_object *l);
+scm_object *scm_assq(scm_object *o, scm_object *l);
+scm_object *scm_assv(scm_object *o, scm_object *l);
+scm_object *scm_assoc(scm_object *o, scm_object *l);
 
 scm_object *scm_caar(scm_object *pair);
 scm_object *scm_cadr(scm_object *pair);
