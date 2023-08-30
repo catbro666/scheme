@@ -158,6 +158,12 @@ int scm_write(scm_object *port, scm_object *obj) {
     case scm_type_compound:
         i = write_procedure(port, obj);
         break;
+    case scm_type_core_syntax:
+        i = write_raw_string(port, "#<core-syntax>");
+        break;
+    case scm_type_transformer:
+        i = write_raw_string(port, "#<macro-transformer>");
+        break;
 
     default:
         break;

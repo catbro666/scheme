@@ -136,7 +136,8 @@ scm_object *scm_env_extend(scm_object *env, scm_object *vars, scm_object *vals) 
 scm_object *scm_env_lookup_var(scm_object *env, scm_object *var) {
     if (IS_EXTENDED_IDENTIFIER(var)) {
         env = scm_esymbol_get_env(var);
-        assert(IS_RAW_IDENTIFIER(scm_esymbol_get_symbol(var)));
+        var = scm_esymbol_get_symbol(var);
+        assert(IS_RAW_IDENTIFIER(var));
     }
     scm_object *binding = env_scan(env, var, 1);
     if (binding) {

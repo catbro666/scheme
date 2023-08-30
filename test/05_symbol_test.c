@@ -17,6 +17,25 @@ TEST(symbol, new) {
     scm_object_free(obj);
 }
 
+TEST(esymbol, new) {
+    TEST_INIT();
+    scm_object *env = scm_global_env();
+
+    scm_object *obj = scm_symbol_new("ab1", 3);
+    REQUIRE(obj, "scm_symbol_new");
+
+    scm_object *obj2 = scm_esymbol_new(obj, 1, env);
+    REQUIRE_EQ(obj2->type, scm_type_eidentifier);
+
+    REQUIRE_OBJ_EQ(scm_esymbol_get_symbol(obj2), obj);
+    REQUIRE_EQ(scm_esymbol_get_uid(obj2), 1);
+    REQUIRE_OBJ_EQ(scm_esymbol_get_env(obj2), env);
+    REQUIRE_STREQ(scm_esymbol_get_string(obj2), "ab1");
+
+    scm_object_free(obj);
+    scm_object_free(obj2);
+}
+
 TEST(symbol, equivalence) {
     TEST_INIT();
 

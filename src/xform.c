@@ -351,15 +351,15 @@ static void pid_binding_set_binding(scm_object *pb, scm_object *b) {
     scm_set_cdr(pb, b);
 }
 
-static scm_object *binding_get_occurrence(scm_object *b) {
+scm_object *binding_get_occurrence(scm_object *b) {
     return scm_car(b);
 }
 
-static scm_object *binding_get_form(scm_object *b) {
+scm_object *binding_get_form(scm_object *b) {
     return scm_cadr(b);
 }
 
-static scm_object *binding_get_head(scm_object *b) {
+scm_object *binding_get_head(scm_object *b) {
     return scm_cadr(b);
 }
 
@@ -411,7 +411,7 @@ static scm_object *merge_pid_bindings(scm_object *pids1, scm_object *pids2) {
         FOREACH_LIST(pb, l) {
             b = pid_binding_get_binding(pb);
             pair = scm_cons(b, scm_null);
-            pid_binding_set_binding(pb, scm_list(3, INTEGER(1), pair));
+            pid_binding_set_binding(pb, scm_list(2, INTEGER(1), pair));
         }
         return pids2;
     }
@@ -428,7 +428,7 @@ static scm_object *merge_pid_bindings(scm_object *pids1, scm_object *pids2) {
     }
 }
 
-static scm_object *lookup_pid_binding(scm_object *pids, scm_object *pid) {
+scm_object *lookup_pid_binding(scm_object *pids, scm_object *pid) {
     scm_object *pb;
     while (pids->type == scm_type_pair) {
         pb = scm_car(pids);
@@ -444,8 +444,8 @@ static scm_object *pid_bind_form(scm_object *pids, scm_object *pid, scm_object *
 }
 
 static scm_object *pid_bind_forms(scm_object *pids, scm_object *pid, int n,
-                                  scm_object *head, scm_object *tail) {
-    return add_pid_binding(pids, scm_list(4, pid, INTEGER(n), head, tail));
+                                  scm_object *head) {
+    return add_pid_binding(pids, scm_list(3, pid, INTEGER(n), head));
 }
 
 static scm_object *get_next_iteration(scm_object *pids) {
@@ -468,8 +468,8 @@ static scm_object *get_next_iteration(scm_object *pids) {
 /* what's having the same lexical binding mean exactly?
  * in the same place of env?  */
 static int is_same_binding(scm_object *f, scm_object *p, scm_object *oenv, scm_object *nenv) {
-    scm_object *of = scm_env_lookup_var(f, nenv);
-    scm_object *op = scm_env_lookup_var(p, oenv);
+    scm_object *of = scm_env_lookup_var(nenv, f);
+    scm_object *op = scm_env_lookup_var(oenv, p);
     /* we compare the address rather than the value here */
     return (of == op) && (of != NULL || scm_eq(f, p));
 }
@@ -478,8 +478,9 @@ static scm_object *pid_bind_empty_forms(scm_object *p, scm_object *literals) {
     scm_object *pids = scm_null;
     switch (p->type) {
     case scm_type_identifier:
+    case scm_type_eidentifier:
         if (!is_literal_id(p, literals) && !scm_eq(p, sym_ellipsis))
-            pids = pid_bind_forms(pids, p, 0, scm_null, scm_null);
+            pids = pid_bind_forms(pids, p, 0, scm_null);
         break;
     case scm_type_pair:
         FOREACH_LIST(o, p) {
@@ -507,11 +508,12 @@ static scm_object *pid_bind_empty_forms(scm_object *p, scm_object *literals) {
 /*===============  match input form against pattern ================*/
 
 static scm_object *match_vector_ellisis(scm_object *vf, scm_object *p,
-    scm_object *literals, scm_object *oenv, scm_object *nenv) {
+    scm_object *literals, scm_object *oenv, scm_object *nenv, long start) {
     scm_object *pidss = scm_null;
     scm_object *pids = NULL;
+    long n = scm_vector_length(vf);
 
-    FOREACH_VECTOR(i, n, vf) {
+    for (long i = start; i < n; ++i) {
         scm_object *f = scm_vector_ref(vf, i);
         pids = match_subpattern(f, p, literals, oenv, nenv, 1);
         if (pids == NULL)
@@ -558,7 +560,7 @@ static scm_object *match_vector_pattern(scm_object *vf, scm_object *vp,
                 return combine_pid_bindings(pidss, pid_bind_empty_forms(p, literals));
             }
 
-            pids = match_vector_ellisis(vf, p, literals, oenv, nenv);
+            pids = match_vector_ellisis(vf, p, literals, oenv, nenv, i);
             return combine_pid_bindings(pidss, pids);
         }
 
@@ -585,6 +587,7 @@ static scm_object *match_subpattern(scm_object *f, scm_object *p,
     scm_object *literals, scm_object *oenv, scm_object *nenv, int before_ellipsis) {
     switch (p->type) {
     case scm_type_identifier:
+    case scm_type_eidentifier:
         if (!before_ellipsis && is_literal_id(p, literals)) {
             if (!is_same_binding(f, p, oenv, nenv))
                 return NULL;
@@ -651,7 +654,6 @@ static scm_object *match_list_pattern(scm_object *lf, scm_object *lp,
         }
 
         f = scm_car(lf);
-        lf = scm_cdr(lf);
         if (before_ellipsis) {
             pids = match_list_ellisis(lf, p, literals, oenv, nenv);
         }
@@ -664,6 +666,7 @@ static scm_object *match_list_pattern(scm_object *lf, scm_object *lp,
 
         if (before_ellipsis)
             return pidss;
+        lf = scm_cdr(lf);
         p = nextp;
     }
 
@@ -671,7 +674,7 @@ static scm_object *match_list_pattern(scm_object *lf, scm_object *lp,
         pids = match_subpattern(lf, lp, literals, oenv, nenv, 0);
         if (pids == NULL)
             return NULL;
-        pidss = combine_pid_bindings(pidss, pids);
+        return combine_pid_bindings(pidss, pids);
     }
 
     if (lf != scm_null)
@@ -688,7 +691,10 @@ scm_object *match_pattern(scm_object *lf, scm_object *lp,
     /* skip the keyword */
     lf = scm_cdr(lf);
     lp = scm_cdr(lp);
-    return match_list_pattern(lf, lp, literals, oenv, nenv);
+    if (lp == scm_null || IS_PAIR(lp))
+        return match_list_pattern(lf, lp, literals, oenv, nenv);
+    else
+        return match_subpattern(lf, lp, literals, oenv, nenv, 0);
 }
 
 /*===============  expand the template ================*/

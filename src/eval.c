@@ -374,11 +374,12 @@ static scm_object *eval_core_syntax(scm_object *o, scm_object *exp, scm_object *
 }
 
 static scm_object *eval_syntax(scm_object *o, scm_object *exp, scm_object *env) {
-    scm_exp_check_syntax(exp, scm_symbol_get_string(((scm_core_syntax*)o)->kw));
     switch (o->type) {
     case scm_type_core_syntax:
+        scm_exp_check_syntax(exp, scm_symbol_get_string(((scm_core_syntax*)o)->kw));
         return eval_core_syntax(o, exp, env);
         break;
+    /* macro expression can be an improper list, so we don't check */
     default:    /* transformer */
         return scm_eval(transform_macro(o, exp, env), env);
     }
