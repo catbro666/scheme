@@ -192,10 +192,6 @@ void scm_exp_check_if(scm_object *exp) {
         bad_syntax(exp, "if");
 }
 
-static scm_object *make_if(scm_object *test, scm_object *consequent, scm_object *alternate) {
-    return scm_list(4, sym_if, test, consequent, alternate);
-}
-
 scm_object *scm_exp_get_if_test(scm_object *exp) {
     return scm_list_ref(exp, 1);
 }
@@ -293,7 +289,7 @@ static void check_syntax_rules(scm_object *spec) {
     int len = scm_list_length(spec);
     if (len < 2)
         bad_syntax(spec, "syntax-rules");
-    if (!scm_eq(scm_exp_get_spec_keyword(spec), sym_syntax_rules))
+    if (!same_id(scm_exp_get_spec_keyword(spec), sym_syntax_rules))
         syntax_rules_error(spec, "only a `syntax-rules' form is allowed");
 
     /* check literals */
@@ -304,9 +300,9 @@ static void check_syntax_rules(scm_object *spec) {
         o = scm_car(l);
         if (!IS_IDENTIFIER(o))
             syntax_rules_error(o, "<literals> must be a list of identifiers");
-        if (scm_eq(o, sym_ellipsis))
+        if (same_id(o, sym_ellipsis))
             syntax_rules_error(o, "`...` is not allowed in <literals>");
-        if (scm_eq(o, sym_underscore))
+        if (same_id(o, sym_underscore))
             syntax_rules_error(o, "`_` is not allowed in <literals>");
         l = scm_cdr(l);
     }

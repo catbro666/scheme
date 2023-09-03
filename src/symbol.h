@@ -12,6 +12,7 @@ char *scm_esymbol_get_string(scm_object *obj);
 unsigned int scm_esymbol_get_uid(scm_object *obj);
 scm_object *scm_esymbol_get_env(scm_object *obj);
 char *scm_variable_get_string(scm_object *obj);
+int same_id(scm_object *o1, scm_object *o2);
 
 int scm_symbol_init(void);
 int scm_symbol_init_env(scm_object *env);

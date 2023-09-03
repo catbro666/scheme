@@ -133,10 +133,9 @@ scm_object *scm_list_combine(scm_object *l1, scm_object *l2) {
     if (l2 == scm_null)
         return l1;
 
-    FOREACH_LIST(o, l1) {
-        if (l1 == scm_null)
-            scm_set_cdr(o, l2);
-    }
+    scm_object *last = scm_list_last_pair(l1);
+    scm_set_cdr(last, l2);
+
     return l1;
 }
 

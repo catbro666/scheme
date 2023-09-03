@@ -101,6 +101,16 @@ char *scm_variable_get_string(scm_object *obj) {
         return scm_esymbol_get_string(obj);
 }
 
+int same_id(scm_object *o1, scm_object *o2) {
+    if (IS_EXTENDED_IDENTIFIER(o1))
+        o1 = scm_esymbol_get_symbol(o1);
+    if (IS_EXTENDED_IDENTIFIER(o2))
+        o2 = scm_esymbol_get_symbol(o2);
+    if (IS_RAW_IDENTIFIER(o1) && IS_RAW_IDENTIFIER(o2))
+        return scm_eq(o1, o2);
+    return 0;
+}
+
 static int esymbol_eqv(scm_object *o1, scm_object *o2) {
     scm_esymbol *s1 = (scm_esymbol *)o1;
     scm_esymbol *s2 = (scm_esymbol *)o2;

@@ -40,6 +40,10 @@ static void xformer_free(scm_object *obj) {
     free(obj);
 }
 
+/* 0 denotes duplicating for the innermost ...
+ * 1 denotes duplicating for the outermost ... */
+int ellipsis_duplicate_mode = 0;
+
 #define rule_pattern scm_car
 #define rule_template scm_cadr
 
@@ -91,14 +95,14 @@ static int check_list_pattern(scm_object *pat, scm_object *literals, scm_object 
     int before_ellipsis = 0;
     if (l->type == scm_type_pair) {
         o = scm_car(l);
-        if (scm_eq(o, sym_ellipsis))
+        if (same_id(o, sym_ellipsis))
             syntax_rules_error(pat, "the `...` must be after subpattern including pattern identifiers");
     }
     while (l->type == scm_type_pair) {
         l = scm_cdr(l);
         if (l->type == scm_type_pair) {
             nexto = scm_car(l);
-            if (scm_eq(nexto, sym_ellipsis)) {
+            if (same_id(nexto, sym_ellipsis)) {
                 if (scm_cdr(l) != scm_null)
                     syntax_rules_error(pat, "the `...` must be at the end of a <pattern> in the sequence form");
                 before_ellipsis = 1;
@@ -116,7 +120,7 @@ static int check_list_pattern(scm_object *pat, scm_object *literals, scm_object 
         o = nexto;
     }
     if (l != scm_null) {
-        if (scm_eq(l, sym_ellipsis))
+        if (same_id(l, sym_ellipsis))
             syntax_rules_error(l, "the `...` must be at the end of a <pattern> in the sequence form");
         elem_contains_pid = check_subpattern(l, literals, pids, depth);
         list_contains_pid = list_contains_pid || elem_contains_pid;
@@ -130,12 +134,12 @@ static int check_vector_pattern(scm_object *pat, scm_object *literals, scm_objec
     int vect_contains_pid = 0;
     int elem_contains_pid = 0;
     int before_ellipsis = 0;
-    if (len > 0 && scm_eq(scm_vector_ref(pat, 0), sym_ellipsis))
+    if (len > 0 && same_id(scm_vector_ref(pat, 0), sym_ellipsis))
         syntax_rules_error(pat, "the `...` must be after subpattern including pattern identifiers");
 
     FOREACH_VECTOR(i, len, pat) {
         if (i < (len - 1)) {
-            if (scm_eq(scm_vector_ref(pat, i+1), sym_ellipsis)) {
+            if (same_id(scm_vector_ref(pat, i+1), sym_ellipsis)) {
                 if (i != (len - 2))
                     syntax_rules_error(pat, "the `...` must be at the end of a <pattern> in the sequence form");
                 before_ellipsis = 1;
@@ -156,7 +160,7 @@ static int check_vector_pattern(scm_object *pat, scm_object *literals, scm_objec
 
 static int pattern_var_exists(scm_object *pids, scm_object *pid) {
     FOREACH_LIST(o, pids) {
-        if (scm_eq(scm_car(o), pid))
+        if (scm_eq(scm_car(o), pid)) /* seems unnecessary to use same_id */
             return 1;
     }
     return 0;
@@ -203,7 +207,7 @@ static int check_list_template(scm_object *temp, scm_object *pids, long depth, i
     long max_depth = -1, dep;
 
     /* list template beginning with ... */
-    if (!escape && scm_eq(o, sym_ellipsis)) {
+    if (!escape && same_id(o, sym_ellipsis)) {
         l = scm_cdr(l);
         if (l->type != scm_type_pair || scm_cdr(l) != scm_null)
             syntax_rules_error(temp, "illegal use of `...` in template");
@@ -215,7 +219,7 @@ static int check_list_template(scm_object *temp, scm_object *pids, long depth, i
         l = scm_cdr(l);
         while (l->type == scm_type_pair) {  /* r5rs doesn't support consecutive ... */
             nexto = scm_car(l);
-            if (!escape && scm_eq(nexto, sym_ellipsis))
+            if (!escape && same_id(nexto, sym_ellipsis))
                 ellipses++;
             else
                 break;
@@ -252,7 +256,7 @@ static int check_vector_template(scm_object *temp, scm_object *pids, long depth,
         int ellipses = 0;
         while (i+1 < lent) {
             nexto = scm_vector_ref(temp, i+1);
-            if (!escape && scm_eq(nexto, sym_ellipsis))
+            if (!escape && same_id(nexto, sym_ellipsis))
                 ellipses++;
             else
                 break;
@@ -283,7 +287,7 @@ static int check_subtemplate(scm_object *temp, scm_object *pids, long depth, lon
         /* nop */
     }
     else if (IS_IDENTIFIER(temp)) {
-        if (scm_eq(temp, sym_ellipsis))
+        if (same_id(temp, sym_ellipsis))
             syntax_rules_error(temp, "illegal use of `...` in template");
 
         dep = get_pattern_var_depth(pids, temp);
@@ -327,64 +331,45 @@ void check_syntax_rule(scm_object *rule, scm_object *literals) {
 
 
 /* pid_binding:
- * (pid #f form) : for pid without following ...
- * (pid n head) : for pid followed by ...
+ * (pid 0 form) : for pid without following ...
+ * (pid n vector) : for pid followed by ...
  * @pid:   pattern identifier
- * @#f:    indicates this pid isn't followed by ...
- * @n:     number of occurrence
+ * @n:     the depth of ...
  * @form:  the matched input form
- * @head:  head of the list of matched input forms. It has recursive structure.
- *         Its elements are in the form of (#f form) or (n head) .
- *         it's in reversed order actually, but it will be reversed again
- *         when expanding.
+ * @vector:  vector of matched input forms. It is recursive structure.
+ *         Its elements are in the form of (0 form) or (n vector) .
  */
 
 static scm_object *pid_binding_get_pid(scm_object *pb) {
     return scm_car(pb);
 }
 
-static scm_object *pid_binding_get_binding(scm_object *pb) {
+scm_object *pid_binding_get_binding(scm_object *pb) {
     return scm_cdr(pb);
 }
 
-static void pid_binding_set_binding(scm_object *pb, scm_object *b) {
-    scm_set_cdr(pb, b);
+static long binding_get_depth(scm_object *b) {
+    return scm_integer_get_val(scm_car(b));
 }
 
-scm_object *binding_get_occurrence(scm_object *b) {
-    return scm_car(b);
-}
-
-scm_object *binding_get_form(scm_object *b) {
+static scm_object *binding_get_form(scm_object *b) {
     return scm_cadr(b);
 }
 
-scm_object *binding_get_head(scm_object *b) {
+static scm_object *binding_get_vect(scm_object *b) {
     return scm_cadr(b);
 }
 
-static void binding_set_head(scm_object *b, scm_object *h) {
-    scm_set_car(scm_cdr(b), h);
+long pid_binding_get_depth(scm_object *pb) {
+    return binding_get_depth(pid_binding_get_binding(pb));
 }
 
-//static void binding_append(scm_object *b, scm_object *o) {
-//    scm_set_cdr(binding_get_tail(b), o);
-//    scm_set_car(scm_cddr(b), o);
-//    scm_integer_inc(binding_get_occurrence(b));
-//}
-
-static void binding_push(scm_object *b, scm_object *o) {
-    scm_object *head = scm_cons(o, binding_get_head(b));
-    binding_set_head(b, head);
-    scm_integer_inc(binding_get_occurrence(b));
+scm_object *pid_binding_get_form(scm_object *pb) {
+    return binding_get_form(pid_binding_get_binding(pb));
 }
 
-static scm_object *binding_pop(scm_object *b) {
-    scm_object *head = binding_get_head(b);
-    scm_object *o = scm_car(head);
-    binding_set_head(b, scm_cdr(head));
-    // scm_integer_dec(binding_get_occurrence(b));
-    return o;
+scm_object *pid_binding_get_vect(scm_object *pb) {
+    return binding_get_vect(pid_binding_get_binding(pb));
 }
 
  /*
@@ -399,67 +384,105 @@ static scm_object *combine_pid_bindings(scm_object *pids1, scm_object *pids2) {
     return scm_list_combine(pids1, pids2);
 }
 
-/* two list must have the same sets of pattern variables except pids1=scm_null */
-static scm_object *merge_pid_bindings(scm_object *pids1, scm_object *pids2) {
-    scm_object *pb2;
-    scm_object *b;
-    scm_object *b2;
-    scm_object *pair;
-    scm_object *l;
-    if (pids1 == scm_null) {
-        l = pids2;
-        FOREACH_LIST(pb, l) {
-            b = pid_binding_get_binding(pb);
-            pair = scm_cons(b, scm_null);
-            pid_binding_set_binding(pb, scm_list(2, INTEGER(1), pair));
-        }
-        return pids2;
-    }
-    else {
-        l = pids1;
-        FOREACH_LIST(pb, l) {
-            pb2 = scm_car(pids2);
-            b = pid_binding_get_binding(pb);
-            b2 = pid_binding_get_binding(pb2);
-
-            binding_push(b, b2);
-        }
-        return pids1;
-    }
-}
-
 scm_object *lookup_pid_binding(scm_object *pids, scm_object *pid) {
     scm_object *pb;
     while (pids->type == scm_type_pair) {
         pb = scm_car(pids);
         if (scm_eq(pid_binding_get_pid(pb), pid))
-            return pid_binding_get_binding(pb);
+            return pb;
         pids = scm_cdr(pids);
     }
-    return NULL;
+    return scm_false;
 }
 
 static scm_object *pid_bind_form(scm_object *pids, scm_object *pid, scm_object *form) {
-    return add_pid_binding(pids, scm_list(3, pid, scm_false, form));
+    return add_pid_binding(pids, scm_list(3, pid, INTEGER(0), form));
 }
 
-static scm_object *pid_bind_forms(scm_object *pids, scm_object *pid, int n,
-                                  scm_object *head) {
-    return add_pid_binding(pids, scm_list(3, pid, INTEGER(n), head));
+static scm_object *pid_bind_forms(scm_object *pids, scm_object *pid, long dep, long len) {
+    scm_object *vec = scm_empty_vector;
+    if (len > 0)
+        vec = scm_vector_alloc(len);
+    return add_pid_binding(pids, scm_list(3, pid, INTEGER(dep), vec));
 }
 
-static scm_object *get_next_iteration(scm_object *pids) {
+static scm_object *bind_pids_ellipsis(scm_object *p, scm_object *literals, long dep, long len) {
+    scm_object *head = scm_null;
+    long ellipsis = 0;
+    switch (p->type) {
+    case scm_type_identifier:
+    case scm_type_eidentifier:
+        if (is_pattern_id(p, literals))
+            return pid_bind_forms(head, p, dep, len);
+        break;
+    case scm_type_pair:
+        FOREACH_LIST(o, p) {
+            if (IS_PAIR(p) && same_id(scm_car(p), sym_ellipsis))
+                ellipsis = 1;
+            head = scm_list_combine(head, bind_pids_ellipsis(o, literals, dep + ellipsis, len));
+            if (ellipsis)
+                break;
+        }
+        break;
+    case scm_type_vector:
+        FOREACH_VECTOR(i, n, p) {
+            if (i == n -2 && same_id(scm_vector_ref(p, n-1), sym_ellipsis))
+                ellipsis = 1;
+            head = scm_list_combine(head, bind_pids_ellipsis(scm_vector_ref(p, i), literals, dep + ellipsis, len));
+            if (ellipsis)
+                break;
+        }
+        break;
+    default:
+        break;
+    }
+    return head;
+}
+
+static void insert_match_instance(scm_object *pidss, scm_object *pids, long index) {
+    scm_object *id;
+    scm_object *b, *vec;
+    FOREACH_LIST(pb, pids) {
+        id = pid_binding_get_pid(pb);
+        b = pid_binding_get_binding(pb);
+        vec = pid_binding_get_vect(scm_assq(id, pidss));
+        scm_vector_set(vec, index, b);
+    }
+}
+
+static scm_object *get_next_iteration(scm_object *pids, long i) {
     scm_object *l = scm_null;
-    scm_object *id, *b, *occur;
+    scm_object *id, *b, *vec;
+    long dep;
     FOREACH_LIST(o, pids) {
         b = pid_binding_get_binding(o);
-        occur = binding_get_occurrence(b);
-        if (occur == scm_false) {  /* replicate */
+        dep = binding_get_depth(b);
+        if (dep == 0) {  /* replicate for innermost ... */
             l = scm_cons(o, l);
         }
         else {
             id = pid_binding_get_pid(o);
-            l = scm_cons(scm_cons(id, binding_pop(b)), l);
+            vec = binding_get_vect(b);
+            l = scm_cons(scm_cons(id, scm_vector_ref(vec, i)), l);
+        }
+    }
+    return l;
+}
+
+static scm_object *get_next_iteration1(scm_object *pids, long i, long max_dep) {
+    scm_object *l = scm_null;
+    scm_object *id, *b, *vec;
+    long dep;
+    FOREACH_LIST(o, pids) {
+        b = pid_binding_get_binding(o);
+        dep = binding_get_depth(b);
+        if (dep < max_dep) {  /* replicate for outermost ... */
+            l = scm_cons(o, l);
+        }
+        else {
+            id = pid_binding_get_pid(o);
+            vec = binding_get_vect(b);
+            l = scm_cons(scm_cons(id, scm_vector_ref(vec, i)), l);
         }
     }
     return l;
@@ -474,51 +497,22 @@ static int is_same_binding(scm_object *f, scm_object *p, scm_object *oenv, scm_o
     return (of == op) && (of != NULL || scm_eq(f, p));
 }
 
-static scm_object *pid_bind_empty_forms(scm_object *p, scm_object *literals) {
-    scm_object *pids = scm_null;
-    switch (p->type) {
-    case scm_type_identifier:
-    case scm_type_eidentifier:
-        if (!is_literal_id(p, literals) && !scm_eq(p, sym_ellipsis))
-            pids = pid_bind_forms(pids, p, 0, scm_null);
-        break;
-    case scm_type_pair:
-        FOREACH_LIST(o, p) {
-            if (scm_eq(o, sym_ellipsis))
-                continue;
-            pids = combine_pid_bindings(pids, pid_bind_empty_forms(o, literals));
-        }
-        if (p != scm_null)
-            pids = combine_pid_bindings(pids, pid_bind_empty_forms(p, literals));
-        break;
-    case scm_type_vector:
-        FOREACH_VECTOR(i, n, p) {
-            scm_object *o = scm_vector_ref(p, i);
-            if (scm_eq(o, sym_ellipsis))
-                continue;
-            pids = combine_pid_bindings(pids, pid_bind_empty_forms(o, literals));
-        }
-        break;
-    default:
-        break;
-    }
-    return pids;
-}
 
 /*===============  match input form against pattern ================*/
-
 static scm_object *match_vector_ellisis(scm_object *vf, scm_object *p,
     scm_object *literals, scm_object *oenv, scm_object *nenv, long start) {
-    scm_object *pidss = scm_null;
     scm_object *pids = NULL;
     long n = scm_vector_length(vf);
+    scm_object *pidss = bind_pids_ellipsis(p, literals, 1, n - start);
+    long j = 0;
 
     for (long i = start; i < n; ++i) {
         scm_object *f = scm_vector_ref(vf, i);
         pids = match_subpattern(f, p, literals, oenv, nenv, 1);
         if (pids == NULL)
             return NULL;
-        pidss = merge_pid_bindings(pidss, pids);
+        insert_match_instance(pidss, pids, j);
+        ++j;
     }
 
     return pidss;
@@ -546,7 +540,7 @@ static scm_object *match_vector_pattern(scm_object *vf, scm_object *vp,
     }
 
     scm_object *lastp = scm_vector_ref(vp, lenp - 1);
-    has_ellipsis = scm_eq(lastp, sym_ellipsis);
+    has_ellipsis = same_id(lastp, sym_ellipsis);
 
     if ((!has_ellipsis && lenp != lenf)
         || (has_ellipsis && lenp > lenf + 2)) 
@@ -556,10 +550,6 @@ static scm_object *match_vector_pattern(scm_object *vf, scm_object *vp,
         p = scm_vector_ref(vp, i);
 
         if (i == lenp - 2 && has_ellipsis) {
-            if (i == lenf) {    /* 0 occurrences */
-                return combine_pid_bindings(pidss, pid_bind_empty_forms(p, literals));
-            }
-
             pids = match_vector_ellisis(vf, p, literals, oenv, nenv, i);
             return combine_pid_bindings(pidss, pids);
         }
@@ -613,17 +603,20 @@ static scm_object *match_subpattern(scm_object *f, scm_object *p,
 
 static scm_object *match_list_ellisis(scm_object *lf, scm_object *p,
     scm_object *literals, scm_object *oenv, scm_object *nenv) {
-    scm_object *pidss = scm_null;
-    scm_object *pids = NULL;
+    long len = scm_list_length(lf);
+    if (len < 0)
+        return NULL;    /* F must be a proper list */
+    scm_object *pidss = bind_pids_ellipsis(p, literals, 1, len);
+    scm_object *pids;
+    long i = 0;
 
     FOREACH_LIST(f, lf) {
         pids = match_subpattern(f, p, literals, oenv, nenv, 1);
         if (pids == NULL)
             return NULL;
-        pidss = merge_pid_bindings(pidss, pids);
+        insert_match_instance(pidss, pids, i);
+        ++i;
     }
-    if (lf != scm_null)
-        return NULL;    /* F must be a proper list */
 
     return pidss;
 }
@@ -642,22 +635,17 @@ static scm_object *match_list_pattern(scm_object *lf, scm_object *lp,
         lp = scm_cdr(lp);
         if (lp->type == scm_type_pair) {
             nextp = scm_car(lp);
-            if (scm_eq(nextp, sym_ellipsis))
+            if (same_id(nextp, sym_ellipsis))
                 before_ellipsis = 1;
         }
 
-        if (lf == scm_null) {
-            if (before_ellipsis)    /* 0 occurences */
-                return combine_pid_bindings(pidss, pid_bind_empty_forms(p, literals));
-            else
-                return NULL;
-        }
-
-        f = scm_car(lf);
         if (before_ellipsis) {
             pids = match_list_ellisis(lf, p, literals, oenv, nenv);
         }
         else {
+            if (!IS_PAIR(lf))
+                return NULL;
+            f = scm_car(lf);
             pids = match_subpattern(f, p, literals, oenv, nenv, 0);
         }
         if (pids == NULL)
@@ -691,6 +679,7 @@ scm_object *match_pattern(scm_object *lf, scm_object *lp,
     /* skip the keyword */
     lf = scm_cdr(lf);
     lp = scm_cdr(lp);
+
     if (lp == scm_null || IS_PAIR(lp))
         return match_list_pattern(lf, lp, literals, oenv, nenv);
     else
@@ -704,16 +693,15 @@ static unsigned int generate_uid() {
     return ++i;
 }
 
-/* TODO: template begin with ... */
 static scm_object *expand_subtemplate(scm_object *t, scm_object *pids, scm_object *env,
                                       int uid, int escape) {
-    scm_object *b;
+    scm_object *pb = NULL;
     switch (t->type) {
     case scm_type_identifier:
     case scm_type_eidentifier:
-        b = lookup_pid_binding(pids, t);
-        if (b)
-            return binding_get_form(b);
+        pb = lookup_pid_binding(pids, t);
+        if (pb != scm_false)
+            return pid_binding_get_form(pb);
         /* not a pattern variable, return an extended symbol */
         else if (t->type == scm_type_eidentifier)
             return t;
@@ -729,22 +717,31 @@ static scm_object *expand_subtemplate(scm_object *t, scm_object *pids, scm_objec
     }
 }
 
-static scm_object *gather_pattern_vars(scm_object *t, scm_object *pids) {
+static scm_object *get_sub_pids(scm_object *t, scm_object *pids, long *max_dep) {
     scm_object *head = scm_null;
+    scm_object *pb;
+    long dep = -1;
     switch (t->type) {
     case scm_type_identifier:
     case scm_type_eidentifier:
-        if (pattern_var_exists(pids, t))
-            return scm_cons(t, head);
+        pb = lookup_pid_binding(pids, t);
+        if (pb != scm_false) {
+            *max_dep = pid_binding_get_depth(pb);
+            return scm_cons(pb, head);
+        }
         break;
     case scm_type_pair:
         FOREACH_LIST(o, t) {
-            head = scm_list_combine(head, gather_pattern_vars(o, pids));
+            head = scm_list_combine(head, get_sub_pids(o, pids, &dep));
+            if (dep > *max_dep)
+                *max_dep = dep;
         }
         break;
     case scm_type_vector:
         FOREACH_VECTOR(i, n, t) {
-            head = scm_list_combine(head, gather_pattern_vars(scm_vector_ref(t, i), pids));
+            head = scm_list_combine(head, get_sub_pids(scm_vector_ref(t, i), pids, &dep));
+            if (dep > *max_dep)
+                *max_dep = dep;
         }
         break;
     default:
@@ -753,19 +750,42 @@ static scm_object *gather_pattern_vars(scm_object *t, scm_object *pids) {
     return head;
 }
 
-static long ellipsis_match_count(scm_object *pids, scm_object *pvars) {
+static long ellipsis_match_count(scm_object *pids) {
     long n = -1;
     scm_object *b;
-    scm_object *occur;
-    FOREACH_LIST(o, pvars) {
-        b = lookup_pid_binding(pids, o);
-        occur = binding_get_occurrence(b);
-        if (occur != scm_false) {
-            long v = scm_integer_get_val(occur);
+    long len, dep;
+    FOREACH_LIST(pb, pids) {
+        b = pid_binding_get_binding(pb);
+        dep = binding_get_depth(b);
+        /* duplicate for the innermost ..., skip dep == 0 */
+        if (dep) {
+            len = scm_vector_length(binding_get_vect(b));
             if (n == -1)
-                n = v;
+                n = len;
             else {
-                if (n != v)
+                if (n != len)
+                    scm_error("expand_ellipses: incompatible ellipsis match counts for template");
+            }
+        }
+    }
+    return n;
+}
+
+static long ellipsis_match_count1(scm_object *pids, long max_dep) {
+    long n = -1;
+    scm_object *b;
+    long len, dep;
+
+    FOREACH_LIST(pb, pids) {
+        b = pid_binding_get_binding(pb);
+        dep = binding_get_depth(b);
+        /* duplicate for the outermost ..., skip dep < max_dep */
+        if (dep == max_dep) {
+            len = scm_vector_length(binding_get_vect(b));
+            if (n == -1)
+                n = len;
+            else {
+                if (n != len)
                     scm_error("expand_ellipses: incompatible ellipsis match counts for template");
             }
         }
@@ -774,45 +794,56 @@ static long ellipsis_match_count(scm_object *pids, scm_object *pvars) {
 }
 
 static scm_object *expand_ellipses(scm_object *t, scm_object *pids,
-        scm_object *env, int uid, int ellipses, long *plen, scm_object **ptail) {
+        scm_object *env, int uid, int ellipses, long *plen, scm_object **ptail, long max_dep) {
     scm_object *head = scm_null;
-    scm_object *tail = scm_null;
-    scm_object *expanded;
-    scm_object *sub_pids;
+    scm_object *tail = scm_null, *new_tail = scm_null;
+    scm_object *expanded, *sub_pids, *pair;
     ellipses--;
-    scm_object *pvars = gather_pattern_vars(t, pids);
     long len = 0;
     *ptail = scm_null;
+    long n;
     /* all pids followed by ... should have the same match count */
-    long n = ellipsis_match_count(pids, pvars);
-    while (n--) {
-        sub_pids = get_next_iteration(pids);
-        /* here reverse the list again to resume the order */
+    if (ellipsis_duplicate_mode)
+        n = ellipsis_match_count1(pids, max_dep);
+    else
+        n = ellipsis_match_count(pids);
+
+    for (long i = 0; i < n; ++i) {
+        if (ellipsis_duplicate_mode)
+            sub_pids = get_next_iteration1(pids, i, max_dep);
+        else
+            sub_pids = get_next_iteration(pids, i);
+
         if (ellipses) {
             long len2;    
-            expanded = expand_ellipses(t, sub_pids, env, uid, ellipses, &len2, &tail);
+            expanded = expand_ellipses(t, sub_pids, env, uid, ellipses, &len2, &new_tail, max_dep - 1);
             if (head == scm_null) {
                 head = expanded;
-                *ptail = tail;
+                tail = new_tail;
             }
             else {
-                head = scm_list_combine(expanded, head); /* expanded is in the front */
+                if (expanded != scm_null) {
+                    scm_list_combine(tail, expanded);
+                    tail = new_tail;
+                }
             }
             len += len2;
         }
         else {
             expanded = expand_subtemplate(t, sub_pids, env, uid, 0);
+            pair = scm_cons(expanded, scm_null);
             if (head == scm_null) {
-                head = scm_cons(expanded, head);
-                *ptail = head;
+                head = pair;
             }
             else {
-                head = scm_cons(expanded, head);
+                scm_set_cdr(tail, pair);
             }
+            tail = pair;
             ++len;
         }
     }
     *plen = len;
+    *ptail = tail;
     return head;    
 }
 
@@ -820,12 +851,13 @@ static scm_object *expand_list_template(scm_object *temp, scm_object *pids,
                                         scm_object *env, int uid, int escape) {
     scm_object *head = scm_null;
     scm_object *pair, *tail, *new_tail;
-    scm_object *t, *nextt, *expanded;
+    scm_object *t, *nextt, *expanded, *sub_pids;
+    long max_dep = -1;
 
     if (temp->type == scm_type_pair) {
         t = scm_car(temp);
         /* list template beginning with ... */
-        if (!escape && scm_eq(t, sym_ellipsis)) {
+        if (!escape && same_id(t, sym_ellipsis)) {
             return expand_subtemplate(scm_cadr(temp), pids, env, uid, 1);
         }
     }
@@ -834,7 +866,7 @@ static scm_object *expand_list_template(scm_object *temp, scm_object *pids,
         temp = scm_cdr(temp);
         while (temp->type == scm_type_pair) {   /* r5rs doesn't support consecutive ... */
             nextt = scm_car(temp);
-            if (!escape && scm_eq(nextt, sym_ellipsis)) {
+            if (!escape && same_id(nextt, sym_ellipsis)) {
                 ellipses++;
             }
             else {
@@ -843,9 +875,11 @@ static scm_object *expand_list_template(scm_object *temp, scm_object *pids,
             temp = scm_cdr(temp);
         }
 
+        sub_pids = get_sub_pids(t, pids, &max_dep);
+
         if (ellipses) {
             long len;
-            expanded = expand_ellipses(t, pids, env, uid, ellipses, &len, &new_tail);
+            expanded = expand_ellipses(t, sub_pids, env, uid, ellipses, &len, &new_tail, max_dep);
             if (head == scm_null) {
                 head = expanded;
                 tail = new_tail;
@@ -858,7 +892,7 @@ static scm_object *expand_list_template(scm_object *temp, scm_object *pids,
             }
         }
         else {
-            expanded = expand_subtemplate(t, pids, env, uid, escape);
+            expanded = expand_subtemplate(t, sub_pids, env, uid, escape);
             pair = scm_cons(expanded, scm_null);
             if (head == scm_null) {
                 head = pair;
@@ -875,7 +909,8 @@ static scm_object *expand_list_template(scm_object *temp, scm_object *pids,
 }
 
 static scm_object *expand_vector_template(scm_object *temp, scm_object *pids, scm_object *env, int uid, int escape) {
-    scm_object *t, *nextt, *expanded;
+    scm_object *t, *nextt, *expanded, *sub_pids;
+    long max_dep = -1;
     long lent = scm_vector_length(temp);
     if (lent == 0)
         return scm_empty_vector;
@@ -890,7 +925,7 @@ static scm_object *expand_vector_template(scm_object *temp, scm_object *pids, sc
         int ellipses = 0;
         while (++i < lent) {
             nextt = scm_vector_ref(temp, i);
-            if (!escape && scm_eq(nextt, sym_ellipsis)) {
+            if (!escape && same_id(nextt, sym_ellipsis)) {
                 ellipses++;
             }
             else {
@@ -898,10 +933,12 @@ static scm_object *expand_vector_template(scm_object *temp, scm_object *pids, sc
             }
         }
 
+        sub_pids = get_sub_pids(t, pids, &max_dep);
+
         if (ellipses) {
             long len;
             scm_object *tail;
-            expanded = expand_ellipses(t, pids, env, uid, ellipses, &len, &tail);
+            expanded = expand_ellipses(t, sub_pids, env, uid, ellipses, &len, &tail, max_dep);
             if (len != 1 + ellipses) {
                 lenv = lenv + len - ellipses - 1;
                 v = scm_vector_realloc(v, lenv);
@@ -913,7 +950,7 @@ static scm_object *expand_vector_template(scm_object *temp, scm_object *pids, sc
             }
         }
         else {
-            expanded = expand_subtemplate(t, pids, env, uid, escape);
+            expanded = expand_subtemplate(t, sub_pids, env, uid, escape);
             scm_vector_set(v, j++, expanded);
         }
         t = nextt;
@@ -923,8 +960,9 @@ static scm_object *expand_vector_template(scm_object *temp, scm_object *pids, sc
 }
 
 /* top level template */
-static scm_object *expand_template(scm_object *temp, scm_object *pids, scm_object *env) {
+scm_object *expand_template(scm_object *temp, scm_object *pids, scm_object *env) {
     int uid = generate_uid();
+
     return expand_subtemplate(temp, pids, env, uid, 0);
 }
 
