@@ -7,7 +7,7 @@ typedef struct scm_char_st {
     char c;
 } scm_char;
 
-static const int CHAR_NUM = 128;
+#define CHAR_NUM 128
 static scm_char scm_chars_arr[CHAR_NUM];
 scm_object *scm_chars[CHAR_NUM];
 

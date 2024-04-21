@@ -26,7 +26,7 @@ static scm_token scm_token_bquote_arr[1]       = {{scm_token_type_bquote, NULL}}
 static scm_token scm_token_comma_arr[1]        = {{scm_token_type_comma, NULL}};
 static scm_token scm_token_comma_at_arr[1]     = {{scm_token_type_comma_at, NULL}};
 static scm_token scm_token_dot_arr[1]          = {{scm_token_type_dot, NULL}};
-static const int CHAR_NUM = 128;
+#define CHAR_NUM 128
 static scm_token scm_token_chars_arr[CHAR_NUM];
 scm_token *scm_token_chars[CHAR_NUM];
 scm_token *scm_token_eof          = scm_token_eof_arr;

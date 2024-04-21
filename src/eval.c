@@ -61,8 +61,10 @@ static scm_object *eval_assignment(scm_object *exp, scm_object *env) {
     case 1:
         scm_error_object(var, "set!: assignment disallowed;\ncan't set "
                          "variable before its definition\nvariable: ");
+        break;
     case 2:
         scm_error_object(var, "set!: cannot mutate syntax identifier in: ");
+        break;
     }
     return scm_void;
 }

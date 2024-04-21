@@ -1,9 +1,15 @@
-CC      = clang
-LD      = clang
+CC     ?= clang
+LD     := $(CC)
 PIC     = -fPIC
 
 CCFLAGS = $(PIC) -Wall -Wextra -std=c11 -g
-LDFLAGS  = 
+LDFLAGS =
+LIBS    =
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	LIBS += -lm -lc
+endif
 
 
 TEST_INCLUDES = -I3rd/tau
@@ -30,7 +36,7 @@ TEST_TARGETS = $(TEST_SRCS:%.c=%)
 all: $(TARGET)
 
 $(TARGET): $(OBJS) $(MAIN_OBJ)
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 test: $(TEST_TARGETS)
 	@for test in $(TEST_TARGETS); do \

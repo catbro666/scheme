@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-static const int msg_size = 4096;
+#define msg_size 4096
 static char msg[msg_size];
 static int pos = 0;
 
